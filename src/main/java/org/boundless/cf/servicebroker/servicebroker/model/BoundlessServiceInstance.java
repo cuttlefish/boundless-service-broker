@@ -41,7 +41,7 @@ public class BoundlessServiceInstance extends ServiceInstance {
 	public BoundlessServiceInstance(CreateServiceInstanceRequest request) {
 		super(request);
 		this.setAppMetadata(request.getParameters());
-		this.getAppMetadata().generateAndSetId();
+		log.info("App Metadata now set to" + this.appMetadata);
 	}
 
 	public BoundlessServiceInstance(DeleteServiceInstanceRequest request) {
@@ -50,6 +50,8 @@ public class BoundlessServiceInstance extends ServiceInstance {
 
 	public BoundlessServiceInstance(UpdateServiceInstanceRequest request) {
 		super(request);
+		this.setAppMetadata(request.getParameters());
+		log.info("App Metadata now set to" + this.appMetadata);
 	}
 	
 	/*
@@ -81,12 +83,11 @@ public class BoundlessServiceInstance extends ServiceInstance {
 	}
 	*/
 	
-	public void update(BoundlessServiceInstance from) {
-		super.update(from);
-		AppMetadata appMetadata = from.getAppMetadata();
-		if (appMetadata != null) {
-			this.appMetadata = appMetadata;
-		}
+	public void update(BoundlessServiceInstance updateTo) {
+		super.update(updateTo);
+		AppMetadata updateToAppMetadata = updateTo.getAppMetadata();
+		this.appMetadata.update(updateToAppMetadata);
+		log.info("App Metadata now set to" + this.appMetadata);
 	}
 	
 	@Override
@@ -104,16 +105,20 @@ public class BoundlessServiceInstance extends ServiceInstance {
 	}
 	
 	private void setAppMetadata(Map<String, Object> appMetadataMap) {
-		this.appMetadata = new AppMetadata();
-		
-		if (appMetadata == null) {
+		if (appMetadataMap == null) {
 			return;
 		}
 		
+		this.appMetadata = new AppMetadata();
+		appMetadata.generateAndSetId();
+		
 		for(String key: appMetadataMap.keySet()) {
-			this.appMetadata.setMapping(key, appMetadataMap.get(key));
+			Object val = appMetadataMap.get(key);
+			log.info("Setting key: " + key + " with value: " + val);
+			this.appMetadata.setMapping(key, val);
+			
+			log.info("App Metadata : " + appMetadata);
 		}
 	}
-
 
 }

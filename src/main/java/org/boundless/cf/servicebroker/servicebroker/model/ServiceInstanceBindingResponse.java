@@ -32,7 +32,7 @@ public class ServiceInstanceBindingResponse {
 	@NotEmpty
 	@JsonSerialize
 	@JsonProperty("credentials")
-	public AppMetadata getCredentials() {
+	public Map<String, String> getCredentials() {
 		return binding.getCredentials();
 	}
 

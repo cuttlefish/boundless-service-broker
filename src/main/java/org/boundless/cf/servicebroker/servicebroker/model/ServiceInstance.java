@@ -212,25 +212,24 @@ public class ServiceInstance {
 	}
 	
 	public boolean isInProgress() {
-		log.info("Checking if in Progress: " + getLastOperation());
-
-		if (getLastOperation() == null
-				|| getLastOperation().getState() == null) {
+		ServiceInstanceLastOperation lastOpr = getLastOperation();
+		if (lastOpr == null
+				|| lastOpr.getState() == null) {
 			return false;
 		}
 
-		return getLastOperation().getState().equals(
+		return lastOpr.getOprnState().equals(
 				OperationState.IN_PROGRESS);
 	}
 	
 	public boolean isCurrentOperationSuccessful() {
-		log.info("Checking if successful: " + getLastOperation());
-		if (getLastOperation() == null
-				|| getLastOperation().getState() == null) {
+		ServiceInstanceLastOperation lastOpr = getLastOperation();
+		if (lastOpr == null
+				|| lastOpr.getState() == null) {
 			return false;
 		}
 		
-		return getLastOperation().getState().equals(
+		return lastOpr.getOprnState().equals(
 				OperationState.SUCCEEDED);
 	}
 
@@ -255,42 +254,10 @@ public class ServiceInstance {
 		if (getClass() != obj.getClass())
 			return false;
 		ServiceInstance other = (ServiceInstance) obj;
-		if (async != other.async)
-			return false;
 		if (id == null) {
 			if (other.id != null)
 				return false;
 		} else if (!id.equals(other.id))
-			return false;
-		if (lastOperation == null) {
-			if (other.lastOperation != null)
-				return false;
-		} else if (!lastOperation.equals(other.lastOperation))
-			return false;
-		if (orgGuid == null) {
-			if (other.orgGuid != null)
-				return false;
-		} else if (!orgGuid.equals(other.orgGuid))
-			return false;
-		if (parameters == null) {
-			if (other.parameters != null)
-				return false;
-		} else if (!parameters.equals(other.parameters))
-			return false;
-		if (planId == null) {
-			if (other.planId != null)
-				return false;
-		} else if (!planId.equals(other.planId))
-			return false;
-		if (serviceId == null) {
-			if (other.serviceId != null)
-				return false;
-		} else if (!serviceId.equals(other.serviceId))
-			return false;
-		if (spaceGuid == null) {
-			if (other.spaceGuid != null)
-				return false;
-		} else if (!spaceGuid.equals(other.spaceGuid))
 			return false;
 		return true;
 	}
@@ -375,8 +342,9 @@ public class ServiceInstance {
 		this.orgGuid = request.getOrganizationGuid();
 		this.spaceGuid = request.getSpaceGuid();
 		this.id = request.getServiceInstanceId();
-		this.lastOperation = new ServiceInstanceLastOperation("Provisioning", OperationState.IN_PROGRESS);
+		this.setLastOperation( new ServiceInstanceLastOperation("Provisioning", OperationState.IN_PROGRESS));
 		this.parameters = request.getParameters();
+		log.info("Got Parameters: " + ( (this.parameters == null ) ? "null" : this.parameters.size()));
 	}
 	
 	/**
@@ -389,7 +357,7 @@ public class ServiceInstance {
 		this.id = request.getServiceInstanceId();
 		this.planId = request.getPlanId();
 		this.serviceId = request.getServiceId();
-		this.lastOperation = new ServiceInstanceLastOperation("Deprovisioning", OperationState.IN_PROGRESS);
+		this.setLastOperation( new ServiceInstanceLastOperation("Deprovisioning", OperationState.IN_PROGRESS));
 
 	}
 	
@@ -402,6 +370,8 @@ public class ServiceInstance {
 	public ServiceInstance(UpdateServiceInstanceRequest request) {
 		this.id = request.getServiceInstanceId();
 		this.planId = request.getPlanId();
-		this.lastOperation = new ServiceInstanceLastOperation("Updating", OperationState.IN_PROGRESS);
+		this.setLastOperation( new ServiceInstanceLastOperation("Updating", OperationState.IN_PROGRESS));
+		this.parameters = request.getParameters();
+		log.info("Got Parameters: " + ( (this.parameters == null ) ? "null" : this.parameters.size()));
 	}
 }

@@ -20,7 +20,7 @@ import org.springframework.web.bind.annotation.ResponseBody;
 /**
  * Base controller.
  * Source from: https://github.com/cloudfoundry-community/spring-boot-cf-service-broker
- * @original-author sgreenberg@gopivotal.com
+ * @author sgreenberg@gopivotal.com
  *
  */
 public class BaseController {

@@ -1,7 +1,5 @@
 package org.boundless.cf.servicebroker.servicebroker.model;
 
-import java.util.UUID;
-
 import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
@@ -9,6 +7,7 @@ import javax.persistence.Id;
 import javax.persistence.Table;
 
 import com.fasterxml.jackson.annotation.JsonAutoDetect;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
@@ -31,12 +30,11 @@ public class ServiceInstanceLastOperation {
 	
 	private OperationState state; 
 	
-	public ServiceInstanceLastOperation() {
-	}
+	public ServiceInstanceLastOperation() {	}
 	
 	public ServiceInstanceLastOperation(
 			final String description, 
-			final OperationState operationState)  { 
+			final OperationState operationState)  {
 		setDescription(description); 
 		this.state = operationState;
 	}
@@ -56,6 +54,11 @@ public class ServiceInstanceLastOperation {
 	
 	private void setDescription(String description) {
 		this.description = description;
+	}	
+	
+	@JsonIgnore
+	public OperationState getOprnState() {
+		return state;
 	}
 	
 	@JsonSerialize
@@ -72,6 +75,7 @@ public class ServiceInstanceLastOperation {
 		return "internal error";
 	}
 	
+	@JsonSerialize
 	public void setState(OperationState state) { 
 		this.state = state;
 	}

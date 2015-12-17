@@ -21,11 +21,11 @@ public class AppResponseSubcriber extends SimpleSubcriber<Resource<ApplicationEn
 	private Log log = LogFactory.getLog(AppResponseSubcriber.class);	
 	
 	public void onNext(Resource<ApplicationEntity> t) { 		
-		log.debug("AppResponse-Subscription onNext : " + t);
+		log.info("AppResponse-Subscription onNext : " + t);
 	
 		Resource<ApplicationEntity> response = (Resource<ApplicationEntity>)t;
-		log.debug("Response metadata: " + response.getMetadata());
-		log.debug("Response entity: " + response.getEntity());
+		log.info("Response metadata: " + response.getMetadata());
+		log.info("Response entity: " + response.getEntity());
 		
 		cfEntity = new CFResourceEntity();			
 		
@@ -35,7 +35,7 @@ public class AppResponseSubcriber extends SimpleSubcriber<Resource<ApplicationEn
 		ApplicationEntity resourceEntity = response.getEntity();
 		cfEntity.setName(resourceEntity.getName());
 		
-		log.debug("Created CFResourceEntity: " + cfEntity);
+		log.info("Created CFResourceEntity: " + cfEntity);
 		subscription.request(1);
 	}
 	

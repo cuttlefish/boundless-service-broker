@@ -10,7 +10,8 @@ import org.cloudfoundry.client.v2.Resource;
 import org.reactivestreams.Subscriber;
 import org.reactivestreams.Subscription;
 
-public class SimpleSubcriber<T> implements Subscriber<T> {
+@SuppressWarnings("rawtypes")
+public class SimpleSubcriber<T > implements Subscriber<T> {
 	
 	Log log = LogFactory.getLog(SimpleSubcriber.class);
 	
@@ -39,11 +40,15 @@ public class SimpleSubcriber<T> implements Subscriber<T> {
 	      }
 	}
 	
+	@SuppressWarnings("unchecked")
 	public void onNext(T t) { 
 		log.debug("Subscription onNext current item: " + t);
 	
 	try {
-	    PaginatedResponse<Resource> response = (PaginatedResponse<Resource>)t;
+	    @SuppressWarnings("rawtypes")
+	    
+		//PaginatedResponse<Resource> response = (PaginatedResponse<Resource>) t;
+	    PaginatedResponse response = (PaginatedResponse)t;
 	    List<Resource> resourceList = response.getResources();
 	    
 	    log.debug("resourceList:  " + resourceList);

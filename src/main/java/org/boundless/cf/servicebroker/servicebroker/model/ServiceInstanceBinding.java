@@ -1,11 +1,16 @@
 package org.boundless.cf.servicebroker.servicebroker.model;
 
+import java.util.HashMap;
 import java.util.Map;
 
+import javax.persistence.CollectionTable;
 import javax.persistence.Column;
+import javax.persistence.ElementCollection;
 import javax.persistence.Entity;
+import javax.persistence.FetchType;
 import javax.persistence.Id;
 import javax.persistence.JoinColumn;
+import javax.persistence.MapKeyColumn;
 import javax.persistence.OneToOne;
 import javax.persistence.Table;
 
@@ -41,10 +46,12 @@ public class ServiceInstanceBinding {
 	@Column(nullable = false)
 	private String appGuid;
 
-	@OneToOne// (orphanRemoval = true, cascade = CascadeType.ALL)
-	@JoinColumn(name = "service_binding_id")
-	private AppMetadata appMetadata;
-	
+	@ElementCollection(fetch = FetchType.LAZY)
+	@MapKeyColumn(name="name")
+    @Column(name="value")
+    @CollectionTable(name="binding_creds_attributes", joinColumns=@JoinColumn(name="binding_creds_attrib_id"))
+	protected Map<String,String> credentials = new HashMap<String,String>();
+
 	@JsonSerialize
 	@JsonProperty("syslog_drain")
 	@Column(nullable = true)
@@ -53,28 +60,20 @@ public class ServiceInstanceBinding {
 	public ServiceInstanceBinding() { }
 	
 	public ServiceInstanceBinding(String id, 
-			String serviceInstanceId, 
-			Map<String,Object> credentials,
+			String serviceInstanceId,
+			String serviceId,
+			String planId,
+			Map<String,String> credentials,
 			String syslogDrainUrl, String appGuid) {
 		this.id = id;
+		this.planId = planId;
+		this.serviceId = serviceId;
 		this.instanceId = serviceInstanceId;
-		setCredentials(credentials);
 		this.syslogDrainUrl = syslogDrainUrl;
 		this.appGuid = appGuid;
+		
+		this.credentials = credentials;
 	}
-	
-	public ServiceInstanceBinding(String id, 
-			String serviceInstanceId, 
-			AppMetadata appMetadata,
-			String syslogDrainUrl, String appGuid) {
-		this.id = id;
-		this.instanceId = serviceInstanceId;
-		this.appMetadata = appMetadata;
-		this.syslogDrainUrl = syslogDrainUrl;
-		this.appGuid = appGuid;
-	}
-	
-	
 
 	public String getSyslogDrainUrl() {
 		return syslogDrainUrl;
@@ -157,24 +156,21 @@ public class ServiceInstanceBinding {
 		this.appGuid = appGuid;
 	}
 
-	public AppMetadata getCredentials() {
-		return appMetadata;
+	public Map<String, String> getCredentials() {
+		return credentials;
 	}
 
-	public void setCredentials(AppMetadata credentials) {
-		this.appMetadata = credentials;
-	}
+	private void setCredentials(Map<String, String> map) {
+		this.credentials = map;
+	}	
 	
-	private void setCredentials(Map<String, Object> appMetadataMap) {
-		this.appMetadata = new AppMetadata();
-		
-		if (appMetadataMap == null) {
-			return;
-		}
-		
-		for(String key: appMetadataMap.keySet()) {
-			this.appMetadata.setMapping(key, appMetadataMap.get(key));
-		}
+	@Override
+	public String toString() {
+		return "ServiceInstanceBinding [id=" + id + ", instanceId="
+				+ instanceId + ", serviceId=" + serviceId + ", planId="
+				+ planId + ", appGuid=" + appGuid + ", credentials="
+				+ credentials + ", syslogDrainUrl=" + syslogDrainUrl + "]";
 	}
+
 
 }

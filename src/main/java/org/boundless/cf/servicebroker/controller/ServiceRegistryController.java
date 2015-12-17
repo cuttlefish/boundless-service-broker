@@ -17,6 +17,7 @@ import org.boundless.cf.servicebroker.repository.ServiceDefinitionnRepository;
 import org.boundless.cf.servicebroker.servicebroker.model.Credentials;
 import org.boundless.cf.servicebroker.servicebroker.model.Plan;
 import org.boundless.cf.servicebroker.servicebroker.model.ServiceDefinition;
+import org.boundless.cf.servicebroker.servicebroker.model.ServiceInstance;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -426,6 +427,10 @@ public class ServiceRegistryController {
 	@RequestMapping(value = "/serviceInstances",
 			method = RequestMethod.GET)
 	public ResponseEntity<Object> getServiceInstances() {
+		Iterable<ServiceInstance> iterator = serviceInstanceRepo.findAll();
+		for(ServiceInstance instance: iterator) {
+			log.info("Service Instance: " + instance + " with last oprn: " + instance.getLastOperation());
+		}
 		return new ResponseEntity<>(serviceInstanceRepo.findAll(), HttpStatus.OK);	
 	}
 

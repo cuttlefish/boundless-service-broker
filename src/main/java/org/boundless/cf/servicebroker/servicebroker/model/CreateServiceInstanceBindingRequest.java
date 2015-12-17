@@ -3,11 +3,12 @@ package org.boundless.cf.servicebroker.servicebroker.model;
 import java.util.Map;
 import java.util.Objects;
 
-import org.hibernate.validator.constraints.NotEmpty;
 import org.apache.commons.beanutils.BeanUtils;
+import org.hibernate.validator.constraints.NotEmpty;
 
 import com.fasterxml.jackson.annotation.JsonAutoDetect;
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 
@@ -19,6 +20,7 @@ import com.fasterxml.jackson.databind.annotation.JsonSerialize;
  *
  */
 @JsonAutoDetect(getterVisibility = JsonAutoDetect.Visibility.NONE)
+@JsonIgnoreProperties(ignoreUnknown = true)
 public class CreateServiceInstanceBindingRequest {
 
 	@NotEmpty

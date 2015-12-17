@@ -220,10 +220,11 @@ public class CFAppManager {
     	String orgId = mapOrg(appRequest.getOrg());    	
     	String spaceId = mapSpace(orgId, appRequest.getSpace());
     	
-    	String appId = mapApp( orgId, spaceId, appRequest.getApp());
+    	String appGuid = mapApp( orgId, spaceId, appRequest.getApp());
+    	appRequest.setAppGuid(appGuid);
     	AppResponseSubcriber appResponseSubscriber = new AppResponseSubcriber(CFEntityType.APPLICATION);
     	
-    	if (appId == null) {
+    	if (appGuid == null) {
     		CreateApplicationRequest appCreationRequest = CreateApplicationRequest.builder()
                 .spaceId(spaceId)
                 .name(appRequest.getApp())
@@ -240,29 +241,34 @@ public class CFAppManager {
 	    	
 			Publisher<CreateApplicationResponse> appCreationResponse = this.cfClient.applicationsV2().create(appCreationRequest);
 			appCreationResponse.subscribe(appResponseSubscriber);			
-			appId = appResponseSubscriber.getEntity().getId();			
+			appGuid = appResponseSubscriber.getEntity().getId();	
+			appRequest.setAppGuid(appGuid);
 			
-    	} else {
-    		UpdateApplicationRequest appUpdationRequest = UpdateApplicationRequest.builder()
-                    .spaceId(spaceId)
-                    .name(appRequest.getApp())
-                    .diego(true)
-                    .dockerImage(appRequest.getDockerImage())
-                    .instances(appRequest.getInstances())
-                    .memory(appRequest.getMemory())
-                    .diskQuota(appRequest.getDisk())
-                    .healthCheckTimeout(180)
-                    .state(appRequest.getState())
-                    .build();
+    	} 
+    	
+    	
+		UpdateApplicationRequest appUpdationRequest = UpdateApplicationRequest.builder()
+                .spaceId(spaceId)
+                .name(appRequest.getApp())
+                .diego(true)
+                .state("STARTED")
+                .dockerImage(appRequest.getDockerImage())
+                .instances(appRequest.getInstances())
+                .memory(appRequest.getMemory())
+                .diskQuota(appRequest.getDisk())
+                .healthCheckTimeout(180)
+                .state(appRequest.getState())
+                .build();
 
-	    	log.info("Created UpdateAppRequest: " + appUpdationRequest);
-			
-	    	Publisher<UpdateApplicationResponse> appUpdationResponse = this.cfClient.applicationsV2().update(appUpdationRequest);
-			appUpdationResponse.subscribe(appResponseSubscriber);
-    	}
+    	log.info("Created UpdateAppRequest: " + appUpdationRequest);
+		
+    	Publisher<UpdateApplicationResponse> appUpdationResponse = this.cfClient.applicationsV2().update(appUpdationRequest);
+		appUpdationResponse.subscribe(appResponseSubscriber);
+    	log.info("Updated App to STARTED state: " + appUpdationRequest);
+		
     	    	
     	AssociateApplicationRouteRequest routeRequest = AssociateApplicationRouteRequest.builder()
-                .id(appId)
+                .id(appGuid)
                 .routeId(appRequest.getRouteName())
                 .build();
     	
@@ -271,11 +277,10 @@ public class CFAppManager {
     	AppResponseSubcriber appRouteResponseSubscriber = new AppResponseSubcriber(CFEntityType.APPLICATION);
     	appRouteResponse.subscribe(appRouteResponseSubscriber);
     	log.info("Route associated: " + appRouteResponse);
-
     	
         AssociateApplicationRouteRequest.builder()
-        .id("test-id")
-        .routeId("test-route-id")
+        .id(appRequest.getAppGuid())
+        .routeId(appRequest.getRouteGuid())
         .build()
         .isValid();
         

@@ -154,7 +154,10 @@ public class AppMetadata {
 			case "org": this.setOrg(val.toString()); break;
 			case "app": this.setApp(val.toString()); break;
 			case "space": this.setSpace(val.toString()); break;
-			case "uri": this.setUri(val.toString()); break;
+			case "state": this.setState(val.toString()); break;
+			case "route": 
+			case "uri" : 
+				this.setUri(val.toString()); break;
 			case "instances": this.setInstances(Integer.parseInt(val.toString())); break;
 			case "memory": this.setMemory(Integer.parseInt(val.toString())); break;
 			case "disk": this.setDisk(Integer.parseInt(val.toString())); break;
@@ -331,8 +334,21 @@ public class AppMetadata {
 		} 
 		
 		return id.equals(other.id);
-	}
+	}	
 	
+	@Override
+	public String toString() {
+		return "AppMetadata [id=" + id + ", org=" + org + ", space=" + space
+				+ ", app=" + app + ", orgGuid=" + orgGuid + ", spaceGuid="
+				+ spaceGuid + ", appGuid=" + appGuid + ", uri=" + uri
+				+ ", routeGuid=" + routeGuid + ", domainName=" + domainName
+				+ ", dockerImage=" + dockerImage + ", memory=" + memory
+				+ ", disk=" + disk + ", instances=" + instances
+				+ ", startCommand=" + startCommand + ", state=" + state
+				+ ", docker_cred=" + docker_cred + ", environmentJsons="
+				+ environmentJsons + "]";
+	}
+
 	public int getMemory() {
 		return memory;
 	}
@@ -362,6 +378,41 @@ public class AppMetadata {
 	
 	public void setStartCommand(String startCommand) {
 		this.startCommand = startCommand;
+	}
+	
+	@SuppressWarnings("unchecked")
+	public void update(AppMetadata updateTo) {
+		
+		if (updateTo.getOrg() != null) 
+			this.setOrg(updateTo.getOrg());
+		
+		if (updateTo.getApp() != null) 
+			this.setApp(updateTo.getOrg());
+		
+		if (updateTo.getSpace() != null) 
+			this.setSpace(updateTo.getSpace());
+		
+		if (updateTo.getUri() != null) 
+			this.setUri(updateTo.getUri()); 
+		
+		if (updateTo.getInstances() != 0) 
+			this.setInstances(updateTo.getInstances());
+		
+		if (updateTo.getMemory() != 0) 
+			this.setMemory(updateTo.getMemory() );
+		
+		if (updateTo.getDisk() != 0) 
+			this.setDisk(updateTo.getDisk()); 
+		
+		if (updateTo.getDockerImage() != null) 
+			this.setDockerImage(updateTo.getDockerImage()); 
+		
+		if (updateTo.getDockerCred() != null) 
+			this.setDockerCred(updateTo.getDockerCred());
+		
+		if (updateTo.getEnvironmentJsons() != null) 
+			this.setEnvironmentJsons( updateTo.getEnvironmentJsons()); 
+		
 	}
 	
 }

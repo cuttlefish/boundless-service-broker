@@ -133,11 +133,13 @@ public class BoundlessServiceInstanceService implements ServiceInstanceService {
 		
 		BoundlessServiceInstance serviceInstance = new BoundlessServiceInstance(request);	
 		serviceInstance.setCurrentOperation(ServiceInstance.CREATE_REQUEST);
-		serviceInstance.setLastOperation(new ServiceInstanceLastOperation("Provisioning", OperationState.IN_PROGRESS));    	
+		serviceInstance.setLastOperation(new ServiceInstanceLastOperation("Provisioning", OperationState.IN_PROGRESS));
+    	serviceInstance = saveInstance(serviceInstance);
+    	
     	createApp(serviceInstance);
     	serviceInstance = saveInstance(serviceInstance);
 
-		log.info("registered service instance: "
+		log.info("Registered service instance: "
 				+ serviceInstance);
 
 		return serviceInstance;
@@ -160,12 +162,12 @@ public class BoundlessServiceInstanceService implements ServiceInstanceService {
 
 		serviceInstance.setCurrentOperation(ServiceInstance.DELETE_REQUEST);
 		serviceInstance.setLastOperation(new ServiceInstanceLastOperation("Deprovisioning", OperationState.IN_PROGRESS));
-    	
+		serviceInstance = saveInstance(serviceInstance);
 		log.info("deleting service instance: " + request.getServiceInstanceId() + ", full ServiceInstance details: " + serviceInstance);
 
 		serviceInstance = deleteInstance(serviceInstance);
 
-		log.info("unregistering service instance: "
+		log.info("Unregistered service instance: "
 				+ serviceInstance);
 
 		return serviceInstance;
@@ -184,19 +186,25 @@ public class BoundlessServiceInstanceService implements ServiceInstanceService {
 			return null;
 		}
 		existingInstance.update(updateToInstance);
+		log.info("Updated service instance to: "
+				+ existingInstance);
 		
 		// First persist the state so if any calls into check the state it can show as being deleted...
 		existingInstance.setCurrentOperation(ServiceInstance.UPDATE_REQUEST);
 		existingInstance.setLastOperation(new ServiceInstanceLastOperation("Updating", OperationState.IN_PROGRESS));
-		serviceInstanceRepository.save(existingInstance);		
+		existingInstance = saveInstance(existingInstance);	
 		
 		this.updateApp(existingInstance);
+		existingInstance.getLastOperation().setState(OperationState.SUCCEEDED);
+		
 		AppMetadata cfApp = existingInstance.getAppMetadata();
 		if (cfApp != null) {
 			cfAppRepository.save(cfApp);	
 		}
-		
-		serviceInstanceRepository.save(existingInstance);
+
+		existingInstance = saveInstance(existingInstance);
+		log.info("Updated service instance: "
+				+ existingInstance);
 		return existingInstance;
 	}
 
@@ -214,9 +222,15 @@ public class BoundlessServiceInstanceService implements ServiceInstanceService {
 		
 		// First persist the state so if any calls into check the state it can show as being deleted...
 		instance.setCurrentOperation(BoundlessServiceInstance.DELETE_REQUEST);
+		instance.setLastOperation(new ServiceInstanceLastOperation("Deprovisioning", OperationState.IN_PROGRESS));
 		serviceInstanceRepository.save(instance);
 		
-		this.deleteApp(instance);
+		log.info("Starting deletion of service instance: "
+				+ instance);
+		
+		this.deleteApp(instance);    	
+		instance.getLastOperation().setState(OperationState.SUCCEEDED);
+		saveInstance(instance);
 		
 		if (instance.isCurrentOperationSuccessful()
 				&& instance.getCurrentOperation().equals(ServiceInstance.DELETE_REQUEST)) {
@@ -231,44 +245,18 @@ public class BoundlessServiceInstanceService implements ServiceInstanceService {
 			serviceInstanceRepository.delete(instance.getId());
 		}
 		
+		log.info("Done deletion of service instance: "
+				+ instance);
 		return instance;
 	}
 
 	BoundlessServiceInstance saveInstance(BoundlessServiceInstance instance) {
 		return serviceInstanceRepository.save(instance);
-	}
-	
+	}	
 	
 	public void createApp(BoundlessServiceInstance serviceInstance) {
 		
-		Map<String, Object> params = serviceInstance.getParameters();
-		
-        String org = "dev";
-    	String space = "dev";
-    	String dockerImage = "bonzofenix/spring-music";
-    	String appName = "test-docker";
-    	String routePath = "test-docker-route";
-    	
-    	AppMetadata cfApp = new AppMetadata();
-    	cfApp.generateAndSetId();
-    	cfApp.setApp(appName);
-    	cfApp.setOrg(org);
-    	cfApp.setSpace(space);
-    	cfApp.setOrgGuid("asfdadsfsdf");
-    	cfApp.setSpaceGuid("asfdadsfsdf");
-    	cfApp.setMemory(1024);
-    	cfApp.setDisk(2048);
-    	cfApp.setRouteName(routePath);
-    	cfApp.setDockerImage(dockerImage);
-
-    	
-    	if (params != null && params.size() > 0) {
-    		for(String key: params.keySet()) {
-    			Object val = params.get(key);
-    			cfApp.setMapping(key, val);
-    		}
-    	}
-    	
+		AppMetadata cfApp = serviceInstance.getAppMetadata();
     	SpringCloudFoundryClient cfClient = appManager.getCfClient();
 	 	String orgId = appManager.orgId( cfApp.getOrg());
     	String spaceId = appManager.spaceId( orgId, cfApp.getSpace());
@@ -277,31 +265,22 @@ public class BoundlessServiceInstanceService implements ServiceInstanceService {
     	cfApp.setSpaceGuid(spaceId);
     	
     	serviceInstance.setAppMetadata(cfApp);
-    	serviceInstance.getLastOperation().setState(OperationState.SUCCEEDED);
-    	serviceInstanceRepository.save(serviceInstance);
+    	log.info("App Metadata before push: " + cfApp);
     	
-    	appManager.pushApp(cfApp);    	
+    	appManager.pushApp(cfApp); 
+    	serviceInstance.getLastOperation().setState(OperationState.SUCCEEDED);    	
 	}
 
 	public void updateApp(BoundlessServiceInstance serviceInstance) {
 		
-		Map<String, Object> params = serviceInstance.getParameters();
 		AppMetadata cfApp = serviceInstance.getAppMetadata();
 		
 		if (cfApp == null)
 			return;
 		
-		// Org, spaces might have changed.
-		// Update everything on the cf app
-    	if (params != null && params.size() > 0) {
-    		for(String key: params.keySet()) {
-    			Object val = params.get(key);
-    			cfApp.setMapping(key, val);
-    		}
-    	}
-    	
     	SpringCloudFoundryClient cfClient = appManager.getCfClient();
     	
+    	// Retrieve the current guids for org, space, app
 	 	String orgId = appManager.orgId( cfApp.getOrg());
     	String spaceId = appManager.spaceId( orgId, cfApp.getSpace());
     	String appId = appManager.appId( orgId, spaceId, cfApp.getApp());    	
@@ -310,10 +289,7 @@ public class BoundlessServiceInstanceService implements ServiceInstanceService {
     	cfApp.setSpaceGuid(spaceId);
     	cfApp.setAppGuid(appId);
 
-    	serviceInstance.setAppMetadata(cfApp);
-    	serviceInstance.getLastOperation().setState(OperationState.SUCCEEDED);
-    	serviceInstanceRepository.save(serviceInstance);
-    	
+    	serviceInstance.setAppMetadata(cfApp);    	
     	appManager.pushApp(cfApp);
 	}
 	
@@ -325,6 +301,5 @@ public class BoundlessServiceInstanceService implements ServiceInstanceService {
 		cfAppRepository.delete(cfApp);	
 		
 		serviceInstance.getLastOperation().setState(OperationState.SUCCEEDED);
-		serviceInstanceRepository.save(serviceInstance);
 	}
 }

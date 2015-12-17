@@ -2,6 +2,17 @@ package org.boundless.cf.servicebroker.servicebroker.controller;
 
 import javax.validation.Valid;
 
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.ExceptionHandler;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.ResponseBody;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.boundless.cf.servicebroker.service.ServiceInstanceBindingService;
@@ -16,17 +27,8 @@ import org.boundless.cf.servicebroker.servicebroker.model.ErrorMessage;
 import org.boundless.cf.servicebroker.servicebroker.model.ServiceInstance;
 import org.boundless.cf.servicebroker.servicebroker.model.ServiceInstanceBinding;
 import org.boundless.cf.servicebroker.servicebroker.model.ServiceInstanceBindingResponse;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
-import org.springframework.stereotype.Controller;
-import org.springframework.web.bind.annotation.ExceptionHandler;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestMethod;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.ResponseBody;
+
+
 
 /**
  * See: Source: http://docs.cloudfoundry.com/docs/running/architecture/services/writing-service.html
@@ -57,7 +59,7 @@ public class ServiceInstanceBindingController extends BaseController {
 			@Valid @RequestBody CreateServiceInstanceBindingRequest request) throws
 			ServiceInstanceDoesNotExistException, ServiceInstanceBindingExistsException, 
 			ServiceBrokerException {
-		log.debug( "PUT: " + BASE_PATH + "/{bindingId}"
+		log.info( "PUT: " + BASE_PATH + "/{bindingId}"
 				+ ", bindServiceInstance(), serviceInstance.id = " + instanceId 
 				+ ", bindingId = " + bindingId);
 		ServiceInstance instance = serviceInstanceService.getServiceInstance(instanceId);
@@ -66,7 +68,7 @@ public class ServiceInstanceBindingController extends BaseController {
 		}
 		ServiceInstanceBinding binding = serviceInstanceBindingService.createServiceInstanceBinding(
 				request.withServiceInstanceId(instanceId).and().withBindingId(bindingId));
-		log.debug("ServiceInstanceBinding Created: " + binding.getId());
+		log.info("ServiceInstanceBinding Created: " + binding.getId());
         return new ResponseEntity<>(
 				new ServiceInstanceBindingResponse(binding),
 				HttpStatus.CREATED);
@@ -78,7 +80,7 @@ public class ServiceInstanceBindingController extends BaseController {
 			@PathVariable("bindingId") String bindingId,
 			@RequestParam("service_id") String serviceId,
 			@RequestParam("plan_id") String planId) throws ServiceBrokerException, ServiceInstanceDoesNotExistException, ServiceBrokerAsyncRequiredException {
-		log.debug( "DELETE: " + BASE_PATH + "/{bindingId}"
+		log.info( "DELETE: " + BASE_PATH + "/{bindingId}"
 				+ ", deleteServiceInstanceBinding(),  serviceInstance.id = " + instanceId 
 				+ ", bindingId = " + bindingId 
 				+ ", serviceId = " + serviceId

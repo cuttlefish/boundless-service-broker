@@ -1,9 +1,14 @@
 package org.boundless.cf.servicebroker.service.boundless;
 
+import java.util.HashMap;
+import java.util.Map;
+
+import org.apache.log4j.Logger;
 import org.boundless.cf.servicebroker.repository.ServiceInstanceBindingRepository;
 import org.boundless.cf.servicebroker.service.ServiceInstanceBindingService;
 import org.boundless.cf.servicebroker.servicebroker.exception.ServiceBrokerException;
 import org.boundless.cf.servicebroker.servicebroker.exception.ServiceInstanceBindingExistsException;
+import org.boundless.cf.servicebroker.servicebroker.model.AppMetadata;
 import org.boundless.cf.servicebroker.servicebroker.model.BoundlessServiceInstance;
 import org.boundless.cf.servicebroker.servicebroker.model.CreateServiceInstanceBindingRequest;
 import org.boundless.cf.servicebroker.servicebroker.model.DeleteServiceInstanceBindingRequest;
@@ -15,6 +20,9 @@ import org.springframework.stereotype.Service;
 @Service
 public class BoundlessServiceInstanceBindingService implements
 		ServiceInstanceBindingService {
+
+	private static final Logger log = Logger
+			.getLogger(BoundlessServiceInstanceBindingService.class);
 
 	@Autowired
 	BoundlessServiceInstanceService serviceInstanceService;
@@ -28,6 +36,8 @@ public class BoundlessServiceInstanceBindingService implements
 			throws ServiceInstanceBindingExistsException,
 			ServiceBrokerException {
 
+		log.info("Incoming CreateServiceInstanceBindingRequest: " + request);
+		
 		String bindingId = request.getBindingId();
 		if (bindingId == null) {
 			throw new ServiceBrokerException("no bindingId in request.");
@@ -39,26 +49,36 @@ public class BoundlessServiceInstanceBindingService implements
 		}
 
 		String serviceInstanceId = request.getServiceInstanceId();
-		BoundlessServiceInstance si = (BoundlessServiceInstance) serviceInstanceService
+		BoundlessServiceInstance bsi = (BoundlessServiceInstance) serviceInstanceService
 				.getServiceInstance(serviceInstanceId);
 
-		if (si == null) {
+		if (bsi == null) {
 			throw new ServiceBrokerException("service instance for binding: "
 					+ bindingId + " is missing.");
 		}
 
 		// not supposed to happen per the spec, but better check...
-		if (si.isInProgress()) {
+		if (bsi.isInProgress()) {
 			throw new ServiceBrokerException(
 					"ServiceInstance operation is still in progress.");
 		}
 
-		serviceInstanceService.saveInstance(si);
+		serviceInstanceService.saveInstance(bsi);
+		
+		AppMetadata appMetadata = bsi.getAppMetadata();
+		Map<String, String> credMap = new HashMap<String, String>();
+		credMap.put("name", appMetadata.getApp());
+		credMap.put("guid", appMetadata.getAppGuid());
+		credMap.put("uri", appMetadata.getRouteName());
+		credMap.put("org", appMetadata.getOrg());
+		credMap.put("space", appMetadata.getSpace());
+		credMap.put("image", appMetadata.getDockerImage());
 		
 		ServiceInstanceBinding binding = new ServiceInstanceBinding(bindingId,
-				serviceInstanceId, si.getAppMetadata(), null,
+				serviceInstanceId, bsi.getServiceId(), bsi.getPlanId(), credMap, null,
 				request.getAppGuid());
 
+		log.info("Saving ServiceInstanceBinding: " + binding);
 		return repository.save(binding);
 	}
 
@@ -67,6 +87,8 @@ public class BoundlessServiceInstanceBindingService implements
 			DeleteServiceInstanceBindingRequest request)
 			throws ServiceBrokerException {
 
+		log.info("Incoming DeleteServiceInstanceBindingRequest: " + request);
+		
 		ServiceInstanceBinding binding = repository.findOne(request
 				.getBindingId());
 
