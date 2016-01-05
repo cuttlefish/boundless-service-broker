@@ -15,6 +15,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.apache.log4j.Logger;
 import org.boundless.cf.servicebroker.service.ServiceInstanceBindingService;
 import org.boundless.cf.servicebroker.service.ServiceInstanceService;
 import org.boundless.cf.servicebroker.servicebroker.exception.ServiceBrokerAsyncRequiredException;
@@ -40,7 +41,7 @@ public class ServiceInstanceBindingController extends BaseController {
 
 	public static final String BASE_PATH = "/v2/service_instances/{instanceId}/service_bindings";
 	
-	private static final Log log = LogFactory.getLog(ServiceInstanceBindingController.class);
+	private static final Logger log = Logger.getLogger(ServiceInstanceBindingController.class);
 	
 	private ServiceInstanceBindingService serviceInstanceBindingService;
 	private ServiceInstanceService serviceInstanceService;

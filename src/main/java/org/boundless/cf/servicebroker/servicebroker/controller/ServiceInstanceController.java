@@ -2,8 +2,7 @@ package org.boundless.cf.servicebroker.servicebroker.controller;
 
 import javax.validation.Valid;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
+import org.apache.log4j.Logger;
 import org.boundless.cf.servicebroker.service.CatalogService;
 import org.boundless.cf.servicebroker.service.ServiceInstanceService;
 import org.boundless.cf.servicebroker.servicebroker.exception.ServiceBrokerAsyncRequiredException;
@@ -12,7 +11,6 @@ import org.boundless.cf.servicebroker.servicebroker.exception.ServiceDefinitionD
 import org.boundless.cf.servicebroker.servicebroker.exception.ServiceInstanceDoesNotExistException;
 import org.boundless.cf.servicebroker.servicebroker.exception.ServiceInstanceExistsException;
 import org.boundless.cf.servicebroker.servicebroker.exception.ServiceInstanceUpdateNotSupportedException;
-import org.boundless.cf.servicebroker.servicebroker.model.AppMetadata;
 import org.boundless.cf.servicebroker.servicebroker.model.CreateServiceInstanceRequest;
 import org.boundless.cf.servicebroker.servicebroker.model.DeleteServiceInstanceRequest;
 import org.boundless.cf.servicebroker.servicebroker.model.ErrorMessage;
@@ -20,8 +18,6 @@ import org.boundless.cf.servicebroker.servicebroker.model.ServiceDefinition;
 import org.boundless.cf.servicebroker.servicebroker.model.ServiceInstance;
 import org.boundless.cf.servicebroker.servicebroker.model.ServiceInstanceLastOperation;
 import org.boundless.cf.servicebroker.servicebroker.model.UpdateServiceInstanceRequest;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
@@ -46,7 +42,7 @@ public class ServiceInstanceController extends BaseController {
 
 	public static final String BASE_PATH = "/v2/service_instances";
 	
-	private static final Log log = LogFactory.getLog(ServiceInstanceController.class);
+	private static final Logger log = Logger.getLogger(ServiceInstanceController.class);
 	
 	private ServiceInstanceService service;
 	private CatalogService catalogService;

@@ -2,6 +2,7 @@ package org.boundless.cf.servicebroker;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.apache.log4j.Logger;
 import org.boundless.cf.servicebroker.cfutils.CFAppManager;
 import org.boundless.cf.servicebroker.service.BeanCatalogService;
 import org.boundless.cf.servicebroker.service.CatalogService;
@@ -23,7 +24,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 @SpringBootApplication
 public class BoundlessServiceBrokerApp  extends WebMvcConfigurerAdapter{
 
-	Log log = LogFactory.getLog(BoundlessServiceBrokerApp.class);
+	private static final Logger log = Logger.getLogger(BoundlessServiceBrokerApp.class);
 	
 	@Autowired
 	private ApplicationContext appContext;

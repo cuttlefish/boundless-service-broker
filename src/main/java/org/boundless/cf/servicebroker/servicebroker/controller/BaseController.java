@@ -3,8 +3,7 @@ package org.boundless.cf.servicebroker.servicebroker.controller;
 
 import javax.servlet.http.HttpServletResponse;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
+import org.apache.log4j.Logger;
 import org.boundless.cf.servicebroker.servicebroker.exception.ServiceBrokerAsyncRequiredException;
 import org.boundless.cf.servicebroker.servicebroker.model.AsyncRequiredErrorMessage;
 import org.boundless.cf.servicebroker.servicebroker.model.ErrorMessage;
@@ -25,7 +24,7 @@ import org.springframework.web.bind.annotation.ResponseBody;
  */
 public class BaseController {
 
-	private static final Log log = LogFactory.getLog(BaseController.class);
+	private static final Logger log = Logger.getLogger(BaseController.class);
 
 	
 	@ExceptionHandler(HttpMessageNotReadableException.class)

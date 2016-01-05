@@ -5,6 +5,7 @@ import java.util.List;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.apache.log4j.Logger;
 import org.cloudfoundry.client.v2.Resource;
 import org.cloudfoundry.client.v2.applications.ApplicationEntity;
 import org.reactivestreams.Subscriber;
@@ -12,13 +13,12 @@ import org.reactivestreams.Subscription;
 
 public class AppResponseSubcriber extends SimpleSubcriber<Resource<ApplicationEntity>> {
 	
+	private static final Logger log = Logger.getLogger(AppResponseSubcriber.class);	
+
 	public AppResponseSubcriber(CFEntityType resourceType) {
 		super(resourceType);
 		// TODO Auto-generated constructor stub
 	}
-
-
-	private Log log = LogFactory.getLog(AppResponseSubcriber.class);	
 	
 	public void onNext(Resource<ApplicationEntity> t) { 		
 		log.info("AppResponse-Subscription onNext : " + t);
@@ -37,7 +37,5 @@ public class AppResponseSubcriber extends SimpleSubcriber<Resource<ApplicationEn
 		
 		log.info("Created CFResourceEntity: " + cfEntity);
 		subscription.request(1);
-	}
-	
-		
+	}	
 }

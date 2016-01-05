@@ -5,6 +5,7 @@ import java.util.Map;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.apache.log4j.Logger;
 import org.boundless.cf.servicebroker.cfutils.CFAppManager;
 import org.boundless.cf.servicebroker.cfutils.CFClientUtility;
 import org.boundless.cf.servicebroker.repository.CredentialsRepository;
@@ -37,7 +38,7 @@ import org.springframework.web.bind.annotation.RestController;
 public class ServiceBrokerController {
 
 	/*
-	Log log = LogFactory.getLog(ServiceBrokerController.class);
+	private static final Logger log = Logger.getLogger(ServiceBrokerController.class);
 
 	@Autowired
 	ServiceRepository serviceRepo;

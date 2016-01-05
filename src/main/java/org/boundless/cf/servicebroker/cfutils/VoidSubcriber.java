@@ -12,15 +12,15 @@ import org.reactivestreams.Subscriber;
 import org.reactivestreams.Subscription;
 
 @SuppressWarnings("rawtypes")
-public class SimpleSubcriber<T > implements Subscriber<T> {
+public class VoidSubcriber<T > implements Subscriber<T> {
 	
-	private static final Logger log = Logger.getLogger(SimpleSubcriber.class);
+	private static final Logger log = Logger.getLogger(VoidSubcriber.class);
 	
 	protected Subscription subscription;
 	protected CFEntityType resource;
 	protected CFResourceEntity cfEntity;
 	
-	public SimpleSubcriber(CFEntityType resourceType) {
+	public VoidSubcriber(CFEntityType resourceType) {
 		this.resource = resourceType;
 	}
 	

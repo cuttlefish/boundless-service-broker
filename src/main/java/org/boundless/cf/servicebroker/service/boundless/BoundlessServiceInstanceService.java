@@ -1,6 +1,4 @@
-	package org.boundless.cf.servicebroker.service.boundless;
-
-import java.util.Map;
+package org.boundless.cf.servicebroker.service.boundless;
 
 import org.apache.log4j.Logger;
 import org.boundless.cf.servicebroker.cfutils.CFAppManager;
@@ -12,8 +10,8 @@ import org.boundless.cf.servicebroker.servicebroker.exception.ServiceBrokerExcep
 import org.boundless.cf.servicebroker.servicebroker.exception.ServiceInstanceDoesNotExistException;
 import org.boundless.cf.servicebroker.servicebroker.exception.ServiceInstanceExistsException;
 import org.boundless.cf.servicebroker.servicebroker.exception.ServiceInstanceUpdateNotSupportedException;
-import org.boundless.cf.servicebroker.servicebroker.model.BoundlessServiceInstance;
 import org.boundless.cf.servicebroker.servicebroker.model.AppMetadata;
+import org.boundless.cf.servicebroker.servicebroker.model.BoundlessServiceInstance;
 import org.boundless.cf.servicebroker.servicebroker.model.CreateServiceInstanceRequest;
 import org.boundless.cf.servicebroker.servicebroker.model.DeleteServiceInstanceRequest;
 import org.boundless.cf.servicebroker.servicebroker.model.OperationState;
@@ -23,8 +21,6 @@ import org.boundless.cf.servicebroker.servicebroker.model.ServiceInstanceLastOpe
 import org.boundless.cf.servicebroker.servicebroker.model.UpdateServiceInstanceRequest;
 import org.cloudfoundry.client.spring.SpringCloudFoundryClient;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
 @Service

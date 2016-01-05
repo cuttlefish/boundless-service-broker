@@ -16,6 +16,7 @@ import javax.persistence.Table;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.apache.log4j.Logger;
 import org.boundless.cf.servicebroker.servicebroker.controller.ServiceBrokerController;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
@@ -30,7 +31,7 @@ import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 @JsonAutoDetect(getterVisibility = JsonAutoDetect.Visibility.NONE)
 public class AppMetadata {
 
-	private static transient Log log = LogFactory.getLog(AppMetadata.class);
+	private static transient final Logger log = Logger.getLogger(AppMetadata.class);
 
 	@Id
 	private String id;
@@ -76,9 +77,14 @@ public class AppMetadata {
 	private String routeGuid;
 	
 	@JsonSerialize
-	@JsonProperty("domain_name")
+	@JsonProperty("domain")
 	@Column(nullable = true)
-	private String domainName;
+	private String domain;	
+	
+	@JsonSerialize
+	@JsonProperty("domain_id")
+	@Column(nullable = true)
+	private String domainGuid;
 	
 	@JsonSerialize
 	@JsonProperty("docker_image")
@@ -153,6 +159,7 @@ public class AppMetadata {
 		switch(key) {
 			case "org": this.setOrg(val.toString()); break;
 			case "app": this.setApp(val.toString()); break;
+			case "domain": this.setDomain(val.toString()); break;
 			case "space": this.setSpace(val.toString()); break;
 			case "state": this.setState(val.toString()); break;
 			case "route": 
@@ -183,6 +190,22 @@ public class AppMetadata {
 
 	public void setSpaceGuid(String spaceGuid) {
 		this.spaceGuid = spaceGuid;
+	}
+
+	public String getDomainGuid() {
+		return domainGuid;
+	}
+
+	public void setDomainGuid(String domainGuid) {
+		this.domainGuid = domainGuid;
+	}
+
+	public Map<String, String> getDocker_cred() {
+		return docker_cred;
+	}
+
+	public void setDocker_cred(Map<String, String> docker_cred) {
+		this.docker_cred = docker_cred;
 	}
 
 	public String getAppGuid() {
@@ -267,12 +290,12 @@ public class AppMetadata {
 		this.uri = routeName;
 	}
 	
-	public String getDomainName() {
-		return domainName;
+	public String getDomain() {
+		return domain;
 	}
 	
-	public void setDomainName(String domainName) {
-		this.domainName = domainName;
+	public void setDomain(String domain) {
+		this.domain = domain;
 	}
 	
 	public String getOrg() {
@@ -307,7 +330,7 @@ public class AppMetadata {
 		result = prime * result
 				+ ((dockerImage == null) ? 0 : dockerImage.hashCode());
 		result = prime * result
-				+ ((domainName == null) ? 0 : domainName.hashCode());
+				+ ((domain == null) ? 0 : domain.hashCode());
 		result = prime * result + ((id == null) ? 0 : id.hashCode());
 		result = prime * result + ((org == null) ? 0 : org.hashCode());
 		result = prime * result + ((orgGuid == null) ? 0 : orgGuid.hashCode());
@@ -339,9 +362,10 @@ public class AppMetadata {
 	@Override
 	public String toString() {
 		return "AppMetadata [id=" + id + ", org=" + org + ", space=" + space
-				+ ", app=" + app + ", orgGuid=" + orgGuid + ", spaceGuid="
-				+ spaceGuid + ", appGuid=" + appGuid + ", uri=" + uri
-				+ ", routeGuid=" + routeGuid + ", domainName=" + domainName
+				+ ", app=" + app + ", domain=" + domain 
+				+ ", orgGuid=" + orgGuid + ", spaceGuid=" + spaceGuid 
+				+ ", domainGuid=" + domainGuid + ", appGuid=" + appGuid 
+				+ ", uri=" + uri + ", routeGuid=" + routeGuid
 				+ ", dockerImage=" + dockerImage + ", memory=" + memory
 				+ ", disk=" + disk + ", instances=" + instances
 				+ ", startCommand=" + startCommand + ", state=" + state
@@ -388,6 +412,12 @@ public class AppMetadata {
 		
 		if (updateTo.getApp() != null) 
 			this.setApp(updateTo.getOrg());
+		
+		if (updateTo.getDomain() != null) 
+			this.setDomain(updateTo.getDomain());
+		
+		if (updateTo.getRouteName() != null) 
+			this.setRouteName(updateTo.getRouteName());
 		
 		if (updateTo.getSpace() != null) 
 			this.setSpace(updateTo.getSpace());
