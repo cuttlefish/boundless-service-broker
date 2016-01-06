@@ -153,7 +153,7 @@ public class CFAppManager {
 
     private String  mapOrg(String orgName) {
     	Publisher<ListOrganizationsResponse> listOrgsResponse = listOrgs(orgName);
-    	System.out.println("ListOrgResponse: " + listOrgsResponse.toString());
+    	log.info("ListOrgResponse: " + listOrgsResponse.toString());
     	
     	SimpleSubcriber<PaginatedResponse> subscriber = new SimpleSubcriber<PaginatedResponse>(CFEntityType.ORGANIZATION);
     	listOrgsResponse.subscribe(subscriber);
@@ -171,7 +171,7 @@ public class CFAppManager {
     	
     	Publisher<ListSpacesResponse> listSpacesResponse = listSpaces(orgId, spaceName);
     
-		System.out.println("ListSpaceResponse: " + listSpacesResponse.toString());
+		log.info("ListSpaceResponse: " + listSpacesResponse.toString());
 		
 		SimpleSubcriber<PaginatedResponse> subscriber = new SimpleSubcriber<PaginatedResponse>(CFEntityType.SPACE);
 		listSpacesResponse.subscribe(subscriber);
@@ -187,7 +187,7 @@ public class CFAppManager {
     private String mapApp(String orgId, String spaceId, String appName) {
     	
     	Publisher<ListApplicationsResponse> listAppsResponse = listApplications(orgId, spaceId, appName);
-    	System.out.println("ListAppResponse: " + listAppsResponse.toString());
+    	log.info("ListAppResponse: " + listAppsResponse.toString());
     	
     	SimpleSubcriber<PaginatedResponse> appSubscriber 
     				= new SimpleSubcriber<PaginatedResponse>(CFEntityType.APPLICATION);
@@ -267,7 +267,8 @@ public class CFAppManager {
     	
 		Publisher<CreateApplicationResponse> appCreationResponse = this.cfClient.applicationsV2().create(appCreationRequest);
 		AppResponseSubcriber appResponseSubscriber = new AppResponseSubcriber(CFEntityType.APPLICATION);
-		appCreationResponse.subscribe(appResponseSubscriber);	
+		appCreationResponse.subscribe(appResponseSubscriber);		
+		appResponseSubscriber.onComplete();
 		log.info("CreateAppResponse: " + appCreationResponse);
 		
 		String appGuid = appResponseSubscriber.getEntity().getId();	
@@ -298,13 +299,22 @@ public class CFAppManager {
     }
     
     private void associateRouteWithAppRequest(AppMetadata appRequest) {
+    	
     	AssociateApplicationRouteRequest routeRequest = AssociateApplicationRouteRequest.builder()
                 .id(appRequest.getAppGuid())
                 .routeId(appRequest.getRouteGuid())
                 .build();
+                
+        Publisher<AssociateApplicationRouteResponse> appRouteResponse = this.cfClient.applicationsV2().associateRoute(routeRequest);    	
     	
-    	Publisher<AssociateApplicationRouteResponse> appRouteResponse = this.cfClient.applicationsV2().associateRoute(routeRequest);
-    	AppResponseSubcriber appRouteResponseSubscriber = new AppResponseSubcriber(CFEntityType.APPLICATION);
+    	/*
+        AssociateRouteApplicationRequest routeRequest = AssociateRouteApplicationRequest.builder()
+                .applicationId(appRequest.getAppGuid())
+                .id(appRequest.getRouteGuid())
+                .build();
+    	Publisher<AssociateRouteApplicationResponse> appRouteResponse = this.cfClient.routes().associateApplication(routeRequest);
+    	*/
+        AppResponseSubcriber appRouteResponseSubscriber = new AppResponseSubcriber(CFEntityType.APPLICATION);
     	appRouteResponse.subscribe(appRouteResponseSubscriber);
     	log.info("Route associated: " + appRouteResponse);    	
     }
@@ -316,12 +326,18 @@ public class CFAppManager {
     	log.info("Created app deletion request: " + appDeletionRequest);			
     	
     	Publisher<Void> deleteAppResponse = this.cfClient.applicationsV2().delete(appDeletionRequest);
-    	VoidSubcriber deleteAppResponseSubscriber = new VoidSubcriber(CFEntityType.SPACE);
+    	VoidSubcriber deleteAppResponseSubscriber = new VoidSubcriber(CFEntityType.VOID);
     	deleteAppResponse.subscribe(deleteAppResponseSubscriber);
     	log.info("Delete App response: " + deleteAppResponse);	
     }
 
     private void createRouteRequest(AppMetadata appRequest) {
+    	
+    	String domainName = appRequest.getDomain();    	
+    	String domainId = createDomain(appRequest.getOrgGuid(), domainName);
+    	log.info("Found Domain Id: " + domainId + " for domain: " + domainName);	
+    	appRequest.setDomainGuid(domainId);    	
+
     	CreateRouteRequest createRouteRequest = CreateRouteRequest.builder()
                 .domainId(appRequest.getDomainGuid())
                 .spaceId(appRequest.getSpaceGuid())
@@ -343,7 +359,7 @@ public class CFAppManager {
                 .build();
     	
     	Publisher<Void> deleteRouteResponse = this.cfClient.routes().delete(deleteRouteRequest);
-    	VoidSubcriber deleteRouteResponseSubscriber = new VoidSubcriber(CFEntityType.SPACE);
+    	VoidSubcriber deleteRouteResponseSubscriber = new VoidSubcriber(CFEntityType.VOID);
     	deleteRouteResponse.subscribe(deleteRouteResponseSubscriber);
     	log.info("Delete Route response: " + deleteRouteResponse);	
     }
@@ -359,7 +375,7 @@ public class CFAppManager {
     	String routePath = "test-docker-route";
     	*/    	
     	
-    	System.out.println("cfClient: " + cfClient);
+    	log.debug("cfClient: " + cfClient);
     	String orgId = mapOrg(appRequest.getOrg());    	
     	String spaceId = mapSpace(orgId, appRequest.getSpace());
     	appRequest.setOrgGuid(orgId);
@@ -370,12 +386,12 @@ public class CFAppManager {
     		createAppRequest(appRequest);
     	}     	
     	
-    	String domainName = appRequest.getDomain();    	
-    	String domainId = createDomain(orgId, domainName);
-    	log.info("Found Domain Id: " + domainId + " for domain: " + domainName);	
-    	appRequest.setDomainGuid(domainId);    	
     	createRouteRequest(appRequest);
+    	associateRouteWithAppRequest(appRequest);
     	
+    	// Before starting the app, make sure the app has staged.. 
+    	// We are doing the route creation and association ahead of the actual starting of the app
+    	// so the app bits are staged by this time.
     	appRequest.setState("STARTED");
     	updateAppRequest(appRequest);
     	
@@ -386,7 +402,7 @@ public class CFAppManager {
 		.next().poll();
     	*/
     	    	
-    	associateRouteWithAppRequest(appRequest);
+    	
     	return; 
     }
     

@@ -287,6 +287,7 @@ public class BoundlessServiceInstanceService implements ServiceInstanceService {
 
     	serviceInstance.setAppMetadata(cfApp);    	
     	appManager.pushApp(cfApp);
+    	serviceInstance.getLastOperation().setState(OperationState.SUCCEEDED);
 	}
 	
 	public void deleteApp(BoundlessServiceInstance serviceInstance) {

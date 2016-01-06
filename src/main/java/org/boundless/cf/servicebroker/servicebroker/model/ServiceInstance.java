@@ -36,8 +36,7 @@ public class ServiceInstance {
 
 	public static final String CREATE_REQUEST = "CREATE_REQUEST";
 	public static final String UPDATE_REQUEST = "UPDATE_REQUEST";
-	public static final String DELETE_REQUEST = "DELETE_REQUEST";
-	
+	public static final String DELETE_REQUEST = "DELETE_REQUEST";	
 
 	@Id
 	protected String id;
@@ -128,14 +127,6 @@ public class ServiceInstance {
 	}
 
 	public ServiceInstanceLastOperation getLastOperation() {
-		
-		// FIXME: HACK To get over the Creation Status update to Succeeded
-		/*
-		long currentTime = System.currentTimeMillis();
-		if (currentTime - this.creationTime.getTime() > 100000) {
-			lastOperation.setState(OperationState.SUCCEEDED); 
-		}
-		*/
 		return lastOperation;
 	}
 
@@ -209,6 +200,7 @@ public class ServiceInstance {
 
 	public void setCurrentOperation(String currentState) {
 		this.currentOperation = currentState;
+		log.info("Current Operation set to: " + currentState);
 	}
 	
 	public boolean isInProgress() {
@@ -233,18 +225,6 @@ public class ServiceInstance {
 				OperationState.SUCCEEDED);
 	}
 
-	/*
-	@JsonIgnore
-	public AppMetadata getAppMetadata() {
-		return appMetadata;
-	}
-
-	@JsonProperty
-	public void setAppMetadata(AppMetadata appMetadata) {
-		this.appMetadata = appMetadata;
-	}
-	*/
-	
 	@Override
 	public boolean equals(Object obj) {
 		if (this == obj)
@@ -314,6 +294,10 @@ public class ServiceInstance {
 		if (from.lastOperation != null) {
 			this.lastOperation = from.lastOperation;
 		}
+		
+		if (from.currentOperation != null) {
+			this.currentOperation = from.currentOperation;
+		}
 	
 		if (from.parameters != null) {
 			this.parameters = from.parameters;
@@ -358,7 +342,6 @@ public class ServiceInstance {
 		this.planId = request.getPlanId();
 		this.serviceId = request.getServiceId();
 		this.setLastOperation( new ServiceInstanceLastOperation("Deprovisioning", OperationState.IN_PROGRESS));
-
 	}
 	
 	/**
