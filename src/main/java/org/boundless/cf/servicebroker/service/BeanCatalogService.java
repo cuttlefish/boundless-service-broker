@@ -3,8 +3,8 @@ package org.boundless.cf.servicebroker.service;
 import java.util.HashMap;
 import java.util.Map;
 
-import org.boundless.cf.servicebroker.servicebroker.model.Catalog;
-import org.boundless.cf.servicebroker.servicebroker.model.ServiceDefinition;
+import org.boundless.cf.servicebroker.model.Catalog;
+import org.boundless.cf.servicebroker.model.ServiceDefinition;
 import org.springframework.beans.factory.annotation.Autowired;
 
 /**

@@ -3,7 +3,7 @@ package org.boundless.cf.servicebroker.repository;
 import java.util.List;
 import java.util.Optional;
 
-import org.boundless.cf.servicebroker.servicebroker.model.ServiceDefinition;
+import org.boundless.cf.servicebroker.model.ServiceDefinition;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.CrudRepository;
 import org.springframework.data.repository.query.Param;

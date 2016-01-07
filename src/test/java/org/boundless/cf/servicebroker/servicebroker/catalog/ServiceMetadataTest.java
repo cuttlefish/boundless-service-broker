@@ -22,7 +22,7 @@ import java.net.URI;
 import java.util.Map;
 
 import org.boundless.cf.servicebroker.AbstractSerializationTest;
-import org.boundless.cf.servicebroker.servicebroker.model.ServiceMetadata;
+import org.boundless.cf.servicebroker.model.ServiceMetadata;
 
 public final class ServiceMetadataTest extends AbstractSerializationTest<ServiceMetadata> {
 

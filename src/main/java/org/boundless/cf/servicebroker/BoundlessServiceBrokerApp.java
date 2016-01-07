@@ -1,12 +1,10 @@
 package org.boundless.cf.servicebroker;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
 import org.apache.log4j.Logger;
 import org.boundless.cf.servicebroker.cfutils.CFAppManager;
+import org.boundless.cf.servicebroker.model.Catalog;
 import org.boundless.cf.servicebroker.service.BeanCatalogService;
 import org.boundless.cf.servicebroker.service.CatalogService;
-import org.boundless.cf.servicebroker.servicebroker.model.Catalog;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;

@@ -27,7 +27,7 @@ import java.util.Map;
 import java.util.Set;
 
 import org.boundless.cf.servicebroker.AbstractSerializationTest;
-import org.boundless.cf.servicebroker.servicebroker.model.PlanMetadata;
+import org.boundless.cf.servicebroker.model.PlanMetadata;
 
 public final class PlanMetadataTest extends AbstractSerializationTest<PlanMetadata> {
 

@@ -1,15 +1,8 @@
 package org.boundless.cf.servicebroker.cfutils;
 
-import java.lang.reflect.Method;
-import java.util.List;
-
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
 import org.apache.log4j.Logger;
 import org.cloudfoundry.client.v2.Resource;
 import org.cloudfoundry.client.v2.applications.ApplicationEntity;
-import org.reactivestreams.Subscriber;
-import org.reactivestreams.Subscription;
 
 public class AppResponseSubcriber extends SimpleSubcriber<Resource<ApplicationEntity>> {
 	
@@ -21,11 +14,11 @@ public class AppResponseSubcriber extends SimpleSubcriber<Resource<ApplicationEn
 	}
 	
 	public void onNext(Resource<ApplicationEntity> t) { 		
-		log.info("AppResponse-Subscription onNext : " + t);
+		log.debug("AppResponse-Subscription onNext : " + t);
 	
 		Resource<ApplicationEntity> response = (Resource<ApplicationEntity>)t;
-		log.info("Response metadata: " + response.getMetadata());
-		log.info("Response entity: " + response.getEntity());
+		log.debug("Response metadata: " + response.getMetadata());
+		log.debug("Response entity: " + response.getEntity());
 		
 		cfEntity = new CFResourceEntity();			
 		
@@ -35,7 +28,7 @@ public class AppResponseSubcriber extends SimpleSubcriber<Resource<ApplicationEn
 		ApplicationEntity resourceEntity = response.getEntity();
 		cfEntity.setName(resourceEntity.getName());
 		
-		log.info("Created CFResourceEntity: " + cfEntity);
+		log.debug("Created CFResourceEntity: " + cfEntity);
 		subscription.request(1);
 	}	
 }

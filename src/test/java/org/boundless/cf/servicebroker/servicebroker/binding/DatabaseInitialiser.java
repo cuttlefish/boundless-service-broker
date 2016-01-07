@@ -3,19 +3,18 @@ package org.boundless.cf.servicebroker.servicebroker.binding;
 import javax.annotation.PostConstruct;
 import javax.annotation.PreDestroy;
 
-import org.boundless.cf.servicebroker.repository.CredentialsRepository;
-import org.boundless.cf.servicebroker.repository.PlanRepository;
-import org.boundless.cf.servicebroker.repository.ServiceInstanceRepository;
+import org.boundless.cf.servicebroker.model.AppMetadata;
+import org.boundless.cf.servicebroker.model.BoundlessServiceInstance;
+import org.boundless.cf.servicebroker.model.Credentials;
+import org.boundless.cf.servicebroker.model.Plan;
+import org.boundless.cf.servicebroker.model.PlanMetadata;
+import org.boundless.cf.servicebroker.model.ServiceDefinition;
+import org.boundless.cf.servicebroker.model.ServiceInstance;
+import org.boundless.cf.servicebroker.model.ServiceInstanceBinding;
+import org.boundless.cf.servicebroker.model.ServiceMetadata;
+import org.boundless.cf.servicebroker.repository.BoundlessServiceInstanceRepository;
 import org.boundless.cf.servicebroker.repository.ServiceDefinitionnRepository;
-import org.boundless.cf.servicebroker.servicebroker.model.Credentials;
-import org.boundless.cf.servicebroker.servicebroker.model.Plan;
-import org.boundless.cf.servicebroker.servicebroker.model.PlanMetadata;
-import org.boundless.cf.servicebroker.servicebroker.model.ServiceDefinition;
-import org.boundless.cf.servicebroker.servicebroker.model.ServiceInstanceBinding;
-import org.boundless.cf.servicebroker.servicebroker.model.ServiceInstance;
-import org.boundless.cf.servicebroker.servicebroker.model.ServiceMetadata;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.jdbc.core.support.JdbcDaoSupport;
 import org.springframework.stereotype.Component;
 
 @Component
@@ -25,7 +24,7 @@ public class DatabaseInitialiser  {
 	ServiceDefinitionnRepository serviceRepo;
 
 	@Autowired
-	ServiceInstanceRepository serviceInstanceRepo;
+	BoundlessServiceInstanceRepository serviceInstanceRepo;
 
     private ServiceDefinition service() {
 
@@ -62,14 +61,16 @@ public class DatabaseInitialiser  {
         return svc;
     }
 
-    private ServiceInstance serviceInstance() {
-    	ServiceInstance svcI = new ServiceInstance();
+    private BoundlessServiceInstance serviceInstance() {
+    	BoundlessServiceInstance svcI = new BoundlessServiceInstance();
     	svcI.setOrgGuid("test-org-id");
     	svcI.setSpaceGuid("test-space-id");
     	svcI.setId("test-service-instance-id");
     	svcI.setPlanId("test-plan-id");
     	svcI.setServiceId("test-service-id");
+    	
 
+    	
     	return svcI;
     }
 
@@ -90,6 +91,9 @@ public class DatabaseInitialiser  {
         // Initialise your database here: create schema, use DBUnit to load data, etc.
 		serviceRepo.save(service());
 		serviceInstanceRepo.save(serviceInstance());
+		System.out.println("Done loading db with service instance...");
+		ServiceInstance si = serviceInstanceRepo.findOne("test-service-instance-id");
+		System.out.println("Got service instance...: " + si);
     }
 
 

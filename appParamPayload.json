@@ -2,13 +2,13 @@
   
   "org": "boundless",
   "space":"boundless-dev",
-  "app":"tyler-test-app2",
-  "route": "tyler-app-route2",
   "domain": "pcfaas-slot8.pez.pivotal.io",
-  "instances": 1,
-  "memory": 1512,
-  "disk": 1512,
-  "docker_image": "jhankes/centos-gs",
-  "docker_cred": { "b" : "bl" , "f23oo" : "bar" }, 
-  "environment" : { "node": "asfdasf =Dadfasdf -asdfadsasf asdfasfdasf" }
+  "docker_cred": { "key" : "test" }, 
+  "geoserver_name":"tyler-test-app4",
+  "geoserver_route": "tyler-app-route4",
+  "geoserver_instances": 1,
+  "geoserver_memory": 1512,
+  "geoserver_disk": 1512,
+  "geoserver_docker_image": "jhankes/centos-gs",
+  "geoserver_environment" : { "envName": "envValue", "OPTS" : " -Dname=value testFlag " }
 }

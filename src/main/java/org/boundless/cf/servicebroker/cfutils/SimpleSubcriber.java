@@ -3,8 +3,6 @@ package org.boundless.cf.servicebroker.cfutils;
 import java.lang.reflect.Method;
 import java.util.List;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
 import org.apache.log4j.Logger;
 import org.cloudfoundry.client.v2.PaginatedResponse;
 import org.cloudfoundry.client.v2.Resource;
@@ -60,7 +58,6 @@ public class SimpleSubcriber<T > implements Subscriber<T> {
 			Resource firstEntry = resourceList.get(0);
 			cfEntity.setId(resourceList.get(0).getMetadata().getId());
 	        
-			Object resourceEntity = resourceList.get(0).getEntity();				
 			Method entityMethod = firstEntry.getClass().getMethod("getEntity");
 	        Object entityObject = entityMethod.invoke(firstEntry, new Object[]{});
 	        
@@ -69,7 +66,7 @@ public class SimpleSubcriber<T > implements Subscriber<T> {
 			Method m = entityObject.getClass().getMethod("getName");
 	        cfEntity.setName( (String) m.invoke(entityObject, new Object[] {}));
 			
-			log.info("Created CFResourceEntity: " + cfEntity);
+			log.debug("Created CFResourceEntity: " + cfEntity);
 		}
 		} catch(Exception e) { e.printStackTrace();}
 		
@@ -84,7 +81,7 @@ public class SimpleSubcriber<T > implements Subscriber<T> {
 		this.cfEntity = entity;
 	}
 
-	public void onError(Throwable t) { log.info("Subscription error!! " + t); t.printStackTrace(); }
+	public void onError(Throwable t) { log.error("Subscription error!! " + t); t.printStackTrace(); }
    
     public void onComplete() { log.debug("Subscription done:"); }
 }

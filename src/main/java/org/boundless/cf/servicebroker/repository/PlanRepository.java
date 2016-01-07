@@ -5,7 +5,7 @@ import java.util.Optional;
 
 import javax.transaction.Transactional;
 
-import org.boundless.cf.servicebroker.servicebroker.model.Plan;
+import org.boundless.cf.servicebroker.model.Plan;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.CrudRepository;
 import org.springframework.data.repository.query.Param;

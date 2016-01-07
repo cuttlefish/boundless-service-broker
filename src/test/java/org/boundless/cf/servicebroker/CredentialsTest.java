@@ -21,7 +21,7 @@ import static org.junit.Assert.assertEquals;
 import java.io.IOException;
 import java.util.Map;
 
-import org.boundless.cf.servicebroker.servicebroker.model.Credentials;
+import org.boundless.cf.servicebroker.model.Credentials;
 
 public final class CredentialsTest extends AbstractSerializationTest<Credentials> {
 

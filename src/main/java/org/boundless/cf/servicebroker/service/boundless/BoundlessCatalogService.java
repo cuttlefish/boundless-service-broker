@@ -2,10 +2,10 @@ package org.boundless.cf.servicebroker.service.boundless;
 
 import org.apache.commons.collections.IteratorUtils;
 import org.apache.log4j.Logger;
+import org.boundless.cf.servicebroker.model.Catalog;
+import org.boundless.cf.servicebroker.model.ServiceDefinition;
 import org.boundless.cf.servicebroker.repository.ServiceDefinitionnRepository;
 import org.boundless.cf.servicebroker.service.CatalogService;
-import org.boundless.cf.servicebroker.servicebroker.model.Catalog;
-import org.boundless.cf.servicebroker.servicebroker.model.ServiceDefinition;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 

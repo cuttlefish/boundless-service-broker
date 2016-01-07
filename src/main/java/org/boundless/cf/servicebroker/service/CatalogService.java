@@ -1,7 +1,7 @@
 package org.boundless.cf.servicebroker.service;
 
-import org.boundless.cf.servicebroker.servicebroker.model.Catalog;
-import org.boundless.cf.servicebroker.servicebroker.model.ServiceDefinition;
+import org.boundless.cf.servicebroker.model.Catalog;
+import org.boundless.cf.servicebroker.model.ServiceDefinition;
 
 
 /**

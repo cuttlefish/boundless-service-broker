@@ -1,11 +1,11 @@
 package org.boundless.cf.servicebroker.service;
 
-import org.boundless.cf.servicebroker.servicebroker.exception.ServiceBrokerAsyncRequiredException;
-import org.boundless.cf.servicebroker.servicebroker.exception.ServiceBrokerException;
-import org.boundless.cf.servicebroker.servicebroker.exception.ServiceInstanceBindingExistsException;
-import org.boundless.cf.servicebroker.servicebroker.model.CreateServiceInstanceBindingRequest;
-import org.boundless.cf.servicebroker.servicebroker.model.DeleteServiceInstanceBindingRequest;
-import org.boundless.cf.servicebroker.servicebroker.model.ServiceInstanceBinding;
+import org.boundless.cf.servicebroker.exception.ServiceBrokerAsyncRequiredException;
+import org.boundless.cf.servicebroker.exception.ServiceBrokerException;
+import org.boundless.cf.servicebroker.exception.ServiceInstanceBindingExistsException;
+import org.boundless.cf.servicebroker.model.CreateServiceInstanceBindingRequest;
+import org.boundless.cf.servicebroker.model.DeleteServiceInstanceBindingRequest;
+import org.boundless.cf.servicebroker.model.ServiceInstanceBinding;
 
 
 /**

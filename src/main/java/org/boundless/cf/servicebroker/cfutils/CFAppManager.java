@@ -6,7 +6,7 @@ import java.util.List;
 import java.util.function.Function;
 
 import org.apache.log4j.Logger;
-import org.boundless.cf.servicebroker.servicebroker.model.AppMetadata;
+import org.boundless.cf.servicebroker.model.AppMetadata;
 import org.cloudfoundry.client.spring.SpringCloudFoundryClient;
 import org.cloudfoundry.client.v2.PaginatedRequest;
 import org.cloudfoundry.client.v2.PaginatedResponse;
@@ -25,6 +25,8 @@ import org.cloudfoundry.client.v2.organizations.ListOrganizationsRequest;
 import org.cloudfoundry.client.v2.organizations.ListOrganizationsResponse;
 import org.cloudfoundry.client.v2.routes.CreateRouteRequest;
 import org.cloudfoundry.client.v2.routes.DeleteRouteRequest;
+import org.cloudfoundry.client.v2.routes.ListRouteApplicationsRequest;
+import org.cloudfoundry.client.v2.routes.ListRoutesRequest;
 import org.cloudfoundry.client.v2.spaces.ListSpacesRequest;
 import org.cloudfoundry.client.v2.spaces.ListSpacesResponse;
 import org.reactivestreams.Publisher;
@@ -109,10 +111,6 @@ public class CFAppManager {
 				.next().poll();
 	}
 	
-
-	
-
-    
     private Publisher<ListOrganizationsResponse> listOrgs(String org) {
     	ListOrganizationsRequest request = ListOrganizationsRequest.builder()
                 .name(org)
@@ -147,13 +145,13 @@ public class CFAppManager {
         		.organizationIds(organizationIds)
         		.spaceIds(spaceIds)
                 .build();
-        log.info("ApplicationRequest: " + request);
+        log.debug("ListApplicationRequest: " + request);
         return this.cfClient.applicationsV2().list(request);
     }
 
     private String  mapOrg(String orgName) {
     	Publisher<ListOrganizationsResponse> listOrgsResponse = listOrgs(orgName);
-    	log.info("ListOrgResponse: " + listOrgsResponse.toString());
+    	log.debug("ListOrgResponse: " + listOrgsResponse.toString());
     	
     	SimpleSubcriber<PaginatedResponse> subscriber = new SimpleSubcriber<PaginatedResponse>(CFEntityType.ORGANIZATION);
     	listOrgsResponse.subscribe(subscriber);
@@ -163,7 +161,7 @@ public class CFAppManager {
     		throw new IllegalStateException("Could not find org " + orgName);
     	}
     	
-    	log.info("Got org entity: " + orgEntity);
+    	log.debug("Got org entity: " + orgEntity);
     	return orgEntity.getId();
     }
     
@@ -171,7 +169,7 @@ public class CFAppManager {
     	
     	Publisher<ListSpacesResponse> listSpacesResponse = listSpaces(orgId, spaceName);
     
-		log.info("ListSpaceResponse: " + listSpacesResponse.toString());
+		log.debug("ListSpaceResponse: " + listSpacesResponse.toString());
 		
 		SimpleSubcriber<PaginatedResponse> subscriber = new SimpleSubcriber<PaginatedResponse>(CFEntityType.SPACE);
 		listSpacesResponse.subscribe(subscriber);
@@ -180,14 +178,14 @@ public class CFAppManager {
 		if (spaceEntity == null) {
 			throw new IllegalStateException("Could not find space: " + spaceName+ " within org:" + orgId);
 		}
-		log.info("Got space entity: " + spaceEntity);
+		log.debug("Got space entity: " + spaceEntity);
 		return spaceEntity.getId();				
     }
     
     private String mapApp(String orgId, String spaceId, String appName) {
     	
     	Publisher<ListApplicationsResponse> listAppsResponse = listApplications(orgId, spaceId, appName);
-    	log.info("ListAppResponse: " + listAppsResponse.toString());
+    	log.debug("ListAppResponse: " + listAppsResponse.toString());
     	
     	SimpleSubcriber<PaginatedResponse> appSubscriber 
     				= new SimpleSubcriber<PaginatedResponse>(CFEntityType.APPLICATION);
@@ -200,7 +198,7 @@ public class CFAppManager {
     	if (appEntity == null)
     		return null;
     	
-    	log.info("Got app entity: " + appEntity);
+    	log.debug("Got app entity: " + appEntity);
 		return appEntity.getId();				
     }
     
@@ -252,34 +250,35 @@ public class CFAppManager {
     }
     
     private void createAppRequest(AppMetadata appRequest) {
-		CreateApplicationRequest appCreationRequest = CreateApplicationRequest.builder()
+    	CreateApplicationRequest appCreationRequest = CreateApplicationRequest.builder()
                 .spaceId(appRequest.getSpaceGuid())
-                .name(appRequest.getApp())
+                .name(appRequest.getName())
                 .diego(true)
                 .dockerImage(appRequest.getDockerImage())
                 .instances(appRequest.getInstances())
                 .memory(appRequest.getMemory())
                 .diskQuota(appRequest.getDisk())
                 .healthCheckTimeout(180)
+                .environmentJsons(appRequest.getEnvironmentJsons())
                 .build();
 
-    	log.info("Created CreateAppRequest: " + appCreationRequest);			
+    	log.debug("Created CreateAppRequest: " + appCreationRequest);			
     	
 		Publisher<CreateApplicationResponse> appCreationResponse = this.cfClient.applicationsV2().create(appCreationRequest);
 		AppResponseSubcriber appResponseSubscriber = new AppResponseSubcriber(CFEntityType.APPLICATION);
 		appCreationResponse.subscribe(appResponseSubscriber);		
 		appResponseSubscriber.onComplete();
-		log.info("CreateAppResponse: " + appCreationResponse);
+		log.debug("CreateAppResponse: " + appCreationResponse);
 		
 		String appGuid = appResponseSubscriber.getEntity().getId();	
 		appRequest.setAppGuid(appGuid);
-		log.info("Created App with Guid: " + appGuid);
+		log.debug("Created App with Guid: " + appGuid);
     }
     
     private void updateAppRequest(AppMetadata appRequest) {
     	UpdateApplicationRequest appUpdateRequest = UpdateApplicationRequest.builder()
                 .spaceId(appRequest.getSpaceGuid())
-                .name(appRequest.getApp())
+                .name(appRequest.getName())
                 .diego(true)
                 .state(appRequest.getState())
                 .dockerImage(appRequest.getDockerImage())
@@ -288,17 +287,107 @@ public class CFAppManager {
                 .diskQuota(appRequest.getDisk())
                 .healthCheckTimeout(180)
                 .id(appRequest.getAppGuid())
+                .environmentJsons(appRequest.getEnvironmentJsons())
                 .build();
 
-    	log.info("Created UpdateAppRequest: " + appUpdateRequest);
+    	log.debug("Created UpdateAppRequest: " + appUpdateRequest);
 		
     	Publisher<UpdateApplicationResponse> appStartUpdationResponse = this.cfClient.applicationsV2().update(appUpdateRequest);
     	AppResponseSubcriber appStartResponseSubscriber = new AppResponseSubcriber(CFEntityType.APPLICATION);
     	appStartUpdationResponse.subscribe(appStartResponseSubscriber);
-    	log.info("UpdateAppResponse: " + appStartUpdationResponse);
+    	appStartResponseSubscriber.onComplete();
+    	log.debug("UpdateAppResponse: " + appStartUpdationResponse);
+    }
+    
+
+    private void deleteAppRequest(AppMetadata appRequest) {
+		DeleteApplicationRequest appDeletionRequest = DeleteApplicationRequest.builder()
+	            .id(appRequest.getAppGuid())
+	            .build();
+    	log.debug("Created app deletion request: " + appDeletionRequest);			
+    	
+    	Publisher<Void> deleteAppResponse = this.cfClient.applicationsV2().delete(appDeletionRequest);
+    	VoidSubcriber deleteAppResponseSubscriber = new VoidSubcriber(CFEntityType.VOID);
+    	deleteAppResponse.subscribe(deleteAppResponseSubscriber);
+    	deleteAppResponseSubscriber.onComplete();
+    	log.debug("Delete App response: " + deleteAppResponse);	
+    }
+
+    private void createRouteRequest(AppMetadata appRequest) {
+    	
+    	String domainName = appRequest.getDomain();    	
+    	String domainId = createDomain(appRequest.getOrgGuid(), domainName);
+    	if (domainName == null) {
+    		log.debug("Found Default Domain Id: " + domainId + ", as no domain was specified");	
+    	} else {
+    		log.debug("Found Domain Id: " + domainId + " for domain: " + domainName);	
+    	}
+    	appRequest.setDomainGuid(domainId);    	
+
+    	if (appRequest.getRouteGuid() != null) {
+    		ListRoutesRequest listRoutesRequest = ListRoutesRequest.builder()
+    			.domainId(appRequest.getDomainGuid())
+    			.host(appRequest.getRoute())
+                .build();
+    	
+    		String existingRouteId = Streams
+                .wrap(this.cfClient.routes().list(listRoutesRequest))
+                .flatMap(response -> Streams.from(response.getResources()))
+                .map(resource -> resource.getMetadata().getId())
+                .next()
+                .poll();
+    		log.debug("Existing RouteGuid : " + existingRouteId + " for given route: " + appRequest.getRoute() + " and previously saved RouteGuid in AppMetadata: " + appRequest.getRouteGuid());
+    	
+    		// If already mapped with same route, then just return
+    		if (appRequest.getRouteGuid().equals(existingRouteId))
+    			return;
+    	}    	
+    	
+    	CreateRouteRequest createRouteRequest = CreateRouteRequest.builder()
+                .domainId(appRequest.getDomainGuid())
+                .spaceId(appRequest.getSpaceGuid())
+                .host(appRequest.getRoute())
+                .build();
+    	
+    	String routeId = Streams
+                .wrap(this.cfClient.routes().create(createRouteRequest))
+                .map(resource -> resource.getMetadata().getId())
+                .next()
+                .poll();
+    	log.debug("Created Route: " + appRequest.getRoute() + " with guid: " + routeId	);	
+    	appRequest.setRouteGuid(routeId);
+    }
+    
+    private void deleteRouteRequest(AppMetadata appRequest) {
+    	DeleteRouteRequest deleteRouteRequest = DeleteRouteRequest.builder()
+                .id(appRequest.getRouteGuid())
+                .build();
+    	
+    	Publisher<Void> deleteRouteResponse = this.cfClient.routes().delete(deleteRouteRequest);
+    	VoidSubcriber deleteRouteResponseSubscriber = new VoidSubcriber(CFEntityType.VOID);
+    	deleteRouteResponse.subscribe(deleteRouteResponseSubscriber);
+    	deleteRouteResponseSubscriber.onComplete();
+    	log.debug("Delete Route response: " + deleteRouteResponse);	
     }
     
     private void associateRouteWithAppRequest(AppMetadata appRequest) {
+    	
+    	ListRouteApplicationsRequest listRouteAppRequest = ListRouteApplicationsRequest.builder()
+                .id(appRequest.getRouteGuid())
+                .build();
+    	
+    	String appId = Streams
+                .wrap(this.cfClient.routes().listApplications(listRouteAppRequest))
+                .flatMap(response -> Streams.from(response.getResources()))
+                .map(resource -> resource.getMetadata().getId())
+                .next()
+                .poll();
+    	
+    	log.debug("For given routeGuid: " + appRequest.getRouteGuid() + ", found appGuid: " + appId);
+    	if (appRequest.getAppGuid().equals(appId)) {
+    		log.debug("Route: " + appRequest.getRoute() +" with routeGuid: " + appRequest.getRouteGuid() + " already associated with app: " + appRequest.getName());
+    		return;
+    	}
     	
     	AssociateApplicationRouteRequest routeRequest = AssociateApplicationRouteRequest.builder()
                 .id(appRequest.getAppGuid())
@@ -316,75 +405,62 @@ public class CFAppManager {
     	*/
         AppResponseSubcriber appRouteResponseSubscriber = new AppResponseSubcriber(CFEntityType.APPLICATION);
     	appRouteResponse.subscribe(appRouteResponseSubscriber);
-    	log.info("Route associated: " + appRouteResponse);    	
+    	appRouteResponseSubscriber.onComplete();
+    	log.debug("AssociateAppRoute response: " + appRouteResponse);
+    	log.debug("Created association of route: " + appRequest.getRoute() + " with app: " + appRequest.getName()	);	
     }
     
-    private void deleteAppRequest(AppMetadata appRequest) {
-		DeleteApplicationRequest appDeletionRequest = DeleteApplicationRequest.builder()
-	            .id(appRequest.getAppGuid())
-	            .build();
-    	log.info("Created app deletion request: " + appDeletionRequest);			
-    	
-    	Publisher<Void> deleteAppResponse = this.cfClient.applicationsV2().delete(appDeletionRequest);
-    	VoidSubcriber deleteAppResponseSubscriber = new VoidSubcriber(CFEntityType.VOID);
-    	deleteAppResponse.subscribe(deleteAppResponseSubscriber);
-    	log.info("Delete App response: " + deleteAppResponse);	
-    }
-
-    private void createRouteRequest(AppMetadata appRequest) {
-    	
-    	String domainName = appRequest.getDomain();    	
-    	String domainId = createDomain(appRequest.getOrgGuid(), domainName);
-    	log.info("Found Domain Id: " + domainId + " for domain: " + domainName);	
-    	appRequest.setDomainGuid(domainId);    	
-
-    	CreateRouteRequest createRouteRequest = CreateRouteRequest.builder()
-                .domainId(appRequest.getDomainGuid())
-                .spaceId(appRequest.getSpaceGuid())
-                .host(appRequest.getRouteName())
-                .build();
-    	
-    	String routeId = Streams
-                .wrap(this.cfClient.routes().create(createRouteRequest))
-                .map(resource -> resource.getMetadata().getId())
-                .next()
-                .poll();
-    	log.info("Got Route associated: " + routeId	);	
-    	appRequest.setRouteGuid(routeId);
-    }
-    
-    private void deleteRouteRequest(AppMetadata appRequest) {
-    	DeleteRouteRequest deleteRouteRequest = DeleteRouteRequest.builder()
-                .id(appRequest.getRouteGuid())
-                .build();
-    	
-    	Publisher<Void> deleteRouteResponse = this.cfClient.routes().delete(deleteRouteRequest);
-    	VoidSubcriber deleteRouteResponseSubscriber = new VoidSubcriber(CFEntityType.VOID);
-    	deleteRouteResponse.subscribe(deleteRouteResponseSubscriber);
-    	log.info("Delete Route response: " + deleteRouteResponse);	
-    }
 
     public void pushApp(AppMetadata appRequest)  {
     	
     	//String org, String space, String dockerImage, String appName;
     	/*
     	String org = "dev";
-    	String space = "dev";
+    	String space = "dev";©
     	String dockerImage = "bonzofenix/spring-music";
     	String appName = "test-docker";
     	String routePath = "test-docker-route";
     	*/    	
     	
     	log.debug("cfClient: " + cfClient);
-    	String orgId = mapOrg(appRequest.getOrg());    	
+    	log.info("AppRequest for create: " + appRequest);
+    	
+    	try {
+	    	String orgId = mapOrg(appRequest.getOrg());    	
+	    	String spaceId = mapSpace(orgId, appRequest.getSpace());
+	    	appRequest.setOrgGuid(orgId);
+	    	appRequest.setSpaceGuid(spaceId);
+	    	
+			createAppRequest(appRequest);
+	    	createRouteRequest(appRequest);
+	    	associateRouteWithAppRequest(appRequest);
+	    	
+	    	// Before starting the app, make sure the app has staged.. 
+	    	// We are doing the route creation and association ahead of the actual starting of the app
+	    	// so the app bits are staged by this time.
+	    	appRequest.setState("STARTED");
+	    	updateAppRequest(appRequest);
+	     	    	
+    	} catch(Exception e) {
+    		// Clean up the app on any issues with route association
+    		e.printStackTrace();
+    		deleteApp(appRequest);
+    		throw e;
+    	}
+    	
+    	log.info("Finished app creation for App: " + appRequest.getName() + ", updated metadata: " + appRequest);	
+    	return; 
+    }
+    
+    public void updateApp(AppMetadata appRequest)  {
+    	
+    	log.debug("cfClient: " + cfClient);
+    	log.info("AppRequest for update: " + appRequest);
+    	
+     	String orgId = mapOrg(appRequest.getOrg());    	
     	String spaceId = mapSpace(orgId, appRequest.getSpace());
     	appRequest.setOrgGuid(orgId);
     	appRequest.setSpaceGuid(spaceId);
-    	
-    	String appGuid = mapApp( orgId, spaceId, appRequest.getApp());
-    	if (appGuid == null) {
-    		createAppRequest(appRequest);
-    	}     	
     	
     	createRouteRequest(appRequest);
     	associateRouteWithAppRequest(appRequest);
@@ -395,14 +471,7 @@ public class CFAppManager {
     	appRequest.setState("STARTED");
     	updateAppRequest(appRequest);
     	
-    	/*
-    	Streams.wrap(cfClient.applicationsV2().list(request))
-		.flatMap(response -> Streams.from(response.getResources()))
-		.map(resource -> resource.getMetadata().getId())
-		.next().poll();
-    	*/
-    	    	
-    	
+    	log.info("Finished app update for App: " + appRequest.getName() + " updated metadata: " + appRequest);		
     	return; 
     }
     
@@ -412,14 +481,12 @@ public class CFAppManager {
     		return;
     	}
     	
-    	deleteRouteRequest(appRequest);
+    	log.info("AppMetadata for delete: " + appRequest);	
+		deleteRouteRequest(appRequest);
 		deleteAppRequest(appRequest);	
     		
-    	log.info("Finished app deletion request for App Guid: " + appRequest.getAppGuid());	
+    	log.info("Finished app deletion for: " + appRequest.getName() + " updated metadata: " + appRequest);	
     	return; 
-    }
-    
-    
-    
+    }    
     
 }

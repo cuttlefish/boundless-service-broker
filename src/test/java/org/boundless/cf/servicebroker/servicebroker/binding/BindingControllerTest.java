@@ -17,9 +17,7 @@
 package org.boundless.cf.servicebroker.servicebroker.binding;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -27,26 +25,14 @@ import java.util.HashMap;
 import java.util.Map;
 
 import org.boundless.cf.servicebroker.AbstractControllerTest;
-import org.boundless.cf.servicebroker.repository.CredentialsRepository;
-import org.boundless.cf.servicebroker.repository.PlanRepository;
-import org.boundless.cf.servicebroker.repository.ServiceInstanceBindingRepository;
-import org.boundless.cf.servicebroker.repository.ServiceInstanceRepository;
-import org.boundless.cf.servicebroker.repository.ServiceDefinitionnRepository;
-import org.boundless.cf.servicebroker.servicebroker.model.Credentials;
-import org.boundless.cf.servicebroker.servicebroker.model.Plan;
-import org.boundless.cf.servicebroker.servicebroker.model.PlanMetadata;
-import org.boundless.cf.servicebroker.servicebroker.model.ServiceDefinition;
-import org.boundless.cf.servicebroker.servicebroker.model.ServiceInstanceBinding;
-import org.boundless.cf.servicebroker.servicebroker.model.ServiceInstance;
-import org.boundless.cf.servicebroker.servicebroker.model.ServiceMetadata;
-import org.junit.After;
-import org.junit.Before;
 import org.junit.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
-import org.springframework.test.web.servlet.ResultActions;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
+import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.*;
 
 public final class BindingControllerTest extends AbstractControllerTest {
 
@@ -56,11 +42,12 @@ public final class BindingControllerTest extends AbstractControllerTest {
 	
     @Test
     public void create() throws Exception {
-    	 this.mockMvc.perform(put("/v2/service_instances/test-service-instance-id/service_bindings/test-service-binding-instance-id")
+    	this.mockMvc.perform(put("/v2/service_instances/test-service-instance-id/service_bindings/test-service-binding-instance-id")
     			.content(bindingInstancePayload())
     			.contentType(MediaType.APPLICATION_JSON))
-    			.andExpect(status().isOk())
-    			.andExpect(jsonPath("$.credentials.uri").exists());
+    			.andDo(print())
+    			.andExpect(status().is2xxSuccessful()) // Instead of just success, it can be created also
+    			.andExpect(jsonPath("$.credentials").exists());
     }
 
     @Test

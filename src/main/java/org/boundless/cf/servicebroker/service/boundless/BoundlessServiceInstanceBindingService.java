@@ -4,15 +4,15 @@ import java.util.HashMap;
 import java.util.Map;
 
 import org.apache.log4j.Logger;
+import org.boundless.cf.servicebroker.exception.ServiceBrokerException;
+import org.boundless.cf.servicebroker.exception.ServiceInstanceBindingExistsException;
+import org.boundless.cf.servicebroker.model.BoundlessAppMetadata;
+import org.boundless.cf.servicebroker.model.BoundlessServiceInstance;
+import org.boundless.cf.servicebroker.model.CreateServiceInstanceBindingRequest;
+import org.boundless.cf.servicebroker.model.DeleteServiceInstanceBindingRequest;
+import org.boundless.cf.servicebroker.model.ServiceInstanceBinding;
 import org.boundless.cf.servicebroker.repository.ServiceInstanceBindingRepository;
 import org.boundless.cf.servicebroker.service.ServiceInstanceBindingService;
-import org.boundless.cf.servicebroker.servicebroker.exception.ServiceBrokerException;
-import org.boundless.cf.servicebroker.servicebroker.exception.ServiceInstanceBindingExistsException;
-import org.boundless.cf.servicebroker.servicebroker.model.AppMetadata;
-import org.boundless.cf.servicebroker.servicebroker.model.BoundlessServiceInstance;
-import org.boundless.cf.servicebroker.servicebroker.model.CreateServiceInstanceBindingRequest;
-import org.boundless.cf.servicebroker.servicebroker.model.DeleteServiceInstanceBindingRequest;
-import org.boundless.cf.servicebroker.servicebroker.model.ServiceInstanceBinding;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -62,17 +62,21 @@ public class BoundlessServiceInstanceBindingService implements
 			throw new ServiceBrokerException(
 					"ServiceInstance operation is still in progress.");
 		}
-
-		serviceInstanceService.saveInstance(bsi);
 		
-		AppMetadata appMetadata = bsi.getAppMetadata();
+		BoundlessAppMetadata appMetadata = bsi.getAppMetadata();
 		Map<String, String> credMap = new HashMap<String, String>();
-		credMap.put("name", appMetadata.getApp());
-		credMap.put("guid", appMetadata.getAppGuid());
-		credMap.put("uri", appMetadata.getRouteName());
-		credMap.put("org", appMetadata.getOrg());
-		credMap.put("space", appMetadata.getSpace());
-		credMap.put("image", appMetadata.getDockerImage());
+		if (appMetadata != null) {
+			credMap.put("geoserver_name", appMetadata.getGeoServerApp());
+			credMap.put("geoserver_guid", appMetadata.getGeoServerAppGuid());
+			credMap.put("geoserver_uri", appMetadata.getGeoServerRoute());
+			credMap.put("geocache_name", appMetadata.getGeoCacheApp());
+			credMap.put("geocache_guid", appMetadata.getGeoCacheAppGuid());
+			credMap.put("geocache_uri", appMetadata.getGeoCacheRoute());
+			credMap.put("org", appMetadata.getOrg());
+			credMap.put("space", appMetadata.getSpace());
+			credMap.put("geoserver_image", appMetadata.getGeoServerDockerImage());
+			credMap.put("geocache_image", appMetadata.getGeoCacheDockerImage());
+		}
 		
 		ServiceInstanceBinding binding = new ServiceInstanceBinding(bindingId,
 				serviceInstanceId, bsi.getServiceId(), bsi.getPlanId(), credMap, null,

@@ -26,7 +26,7 @@ import java.util.Map;
 import java.util.UUID;
 
 import org.boundless.cf.servicebroker.AbstractSerializationTest;
-import org.boundless.cf.servicebroker.servicebroker.model.ServiceDefinition;
+import org.boundless.cf.servicebroker.model.ServiceDefinition;
 
 public final class ServiceTest extends AbstractSerializationTest<ServiceDefinition> {
 

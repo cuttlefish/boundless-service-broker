@@ -25,7 +25,7 @@ import java.util.Map;
 import java.util.UUID;
 
 import org.boundless.cf.servicebroker.AbstractSerializationTest;
-import org.boundless.cf.servicebroker.servicebroker.model.Plan;
+import org.boundless.cf.servicebroker.model.Plan;
 
 public final class PlanTest extends AbstractSerializationTest<Plan> {
 
