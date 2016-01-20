@@ -81,7 +81,6 @@ public class BoundlessServiceInstance extends ServiceInstance {
 	
 	public void setMetadata(BoundlessServiceInstanceMetadata bsiMetadata) {
 		this.boundlessSIMetadata = bsiMetadata;
-		Thread.dumpStack();
 		log.info("Setting the metadata for Service Instance: " + this);
 	}
 	

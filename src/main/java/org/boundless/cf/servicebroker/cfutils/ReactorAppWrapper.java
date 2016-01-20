@@ -14,7 +14,7 @@ import org.cloudfoundry.client.v2.routes.CreateRouteRequest;
 import org.cloudfoundry.client.v2.spaces.ListSpacesRequest;
 import org.springframework.beans.factory.annotation.Autowired;
 
-import reactor.Mono;
+import reactor.core.publisher.Mono;
 import reactor.fn.Function;
 import reactor.fn.tuple.Tuple2;
 import reactor.rx.Promise;
@@ -146,8 +146,8 @@ public class ReactorAppWrapper {
 				.flatMap(response -> Stream.fromIterable(response.getResources()))
 				.as(Stream::from)
 				.single()
-				.map(resource -> resource.getMetadata().getId())
-				.to(Promise.prepare());
+				.map(resource -> resource.getMetadata().getId());
+				//.to(Promise.prepare());
 	}
 	
 	private static Mono<String> requestOrganizationId(CloudFoundryClient cloudFoundryClient, String organization) {
@@ -159,8 +159,8 @@ public class ReactorAppWrapper {
 				.flatMap(response -> Stream.fromIterable(response.getResources()))
 				.as(Stream::from)
 				.single()
-				.map(resource -> resource.getMetadata().getId())
-				.to(Promise.prepare());
+				.map(resource -> resource.getMetadata().getId());
+				//.to(Promise.prepare());
 	}
 	
 	private static Mono<String> requestSpaceId(CloudFoundryClient cloudFoundryClient, Mono<String> organizationId, String space) {

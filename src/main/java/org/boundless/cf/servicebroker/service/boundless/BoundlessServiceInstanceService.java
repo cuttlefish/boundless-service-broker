@@ -80,7 +80,10 @@ public class BoundlessServiceInstanceService implements ServiceInstanceService {
 			CreateServiceInstanceRequest request)
 			throws ServiceInstanceExistsException, ServiceBrokerException {
 
-		if (request == null || request.getServiceDefinitionId() == null) {
+		if (request == null 
+				|| request.getServiceDefinitionId() == null 
+				|| request.getPlanId() == null 
+				|| request.getParameters() == null) {
 			throw new ServiceBrokerException(
 					"invalid CreateServiceInstanceRequest object.");
 		}

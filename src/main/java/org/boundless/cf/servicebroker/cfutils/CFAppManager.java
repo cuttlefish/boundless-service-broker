@@ -45,7 +45,7 @@ import org.cloudfoundry.client.v2.routes.ListRoutesRequest;
 import org.cloudfoundry.client.v2.spaces.ListSpacesRequest;
 import org.reactivestreams.Publisher;
 
-import reactor.Mono;
+import reactor.core.publisher.Mono;
 import reactor.fn.tuple.Tuple2;
 import reactor.rx.Stream;
 
@@ -417,13 +417,18 @@ public class CfAppManager {
                 .map(resource -> resource.getMetadata().getId());
         
        */
-    	
-    	return Mono
+    	if (domain != null) {
+    		
+    		return Mono
                 .just(domain)
                 .then(domain2 -> requestDomain(cloudFoundryClient, domain2))
                 .otherwiseIfEmpty(requestFirstDomain(cloudFoundryClient))
                 .map(resource -> resource.getMetadata().getId());
-                 
+    	} 
+    	
+    	return
+    		requestFirstDomain(cloudFoundryClient)
+   		 	.map(resource -> resource.getMetadata().getId());
     }
 
     private static Mono<String> requestExistingRouteId(CloudFoundryClient cloudFoundryClient, String domainId, String host) {
