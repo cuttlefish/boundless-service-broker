@@ -16,8 +16,8 @@
 
 package org.boundless.cf.servicebroker.cfutils;
 
+import org.cloudfoundry.client.CloudFoundryClient;
 import org.cloudfoundry.client.spring.SpringCloudFoundryClient;
-import org.cloudfoundry.client.spring.SpringLoggregatorClient;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.context.annotation.Bean;
@@ -56,11 +56,6 @@ public class CFClientUtility {
 			@Value("${cf.admin.password}") String cfPassword,
 			@Value("${cf.skipSslValidation:true}") Boolean skipSslValidation) {
 
-		/*
-		String host = "api.classic.coke.cf-app.com";
-		String username = "admin";
-		String password = "f303d88a110c930a91ef";
-		*/
 		
 		return SpringCloudFoundryClient.builder()
 				.host(cfTarget)
@@ -69,14 +64,5 @@ public class CFClientUtility {
 				.skipSslValidation(skipSslValidation)
 				.build();
 	}
-
-	@Bean
-	public SpringLoggregatorClient loggregatorClient(SpringCloudFoundryClient cloudFoundryClient) {
-		return SpringLoggregatorClient.builder()
-				.cloudFoundryClient(cloudFoundryClient)
-				.build();
-	}
-
-
 
 }

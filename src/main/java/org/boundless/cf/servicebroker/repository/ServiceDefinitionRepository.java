@@ -10,7 +10,7 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Component;
 
 @Component
-public interface ServiceDefinitionnRepository extends CrudRepository<ServiceDefinition, String> {
+public interface ServiceDefinitionRepository extends CrudRepository<ServiceDefinition, String> {
 	
 	@Query("SELECT s FROM ServiceDefinition s where s.name = :name")
 	Optional<ServiceDefinition> findByServiceName(@Param("name") String name);

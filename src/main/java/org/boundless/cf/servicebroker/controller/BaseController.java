@@ -55,16 +55,7 @@ public class BaseController {
 			HttpServletResponse response) {
 		log.warn("Exception", ex);
 	    return getErrorResponse(ex.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
-	}
-	
-	@ExceptionHandler(ServiceBrokerAsyncRequiredException.class)
-	public ResponseEntity<AsyncRequiredErrorMessage> handleException(
-			ServiceBrokerAsyncRequiredException ex, 
-			HttpServletResponse response) {
-		return new ResponseEntity<AsyncRequiredErrorMessage>(
-				new AsyncRequiredErrorMessage(ex.getDescription()), HttpStatus.UNPROCESSABLE_ENTITY);
-		
-	}
+	}	
 	
 	public ResponseEntity<ErrorMessage> getErrorResponse(String message, HttpStatus status) {
 		return new ResponseEntity<ErrorMessage>(new ErrorMessage(message), 

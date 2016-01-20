@@ -46,6 +46,10 @@ public class AppMetadata {
 	private String appGuid;
 	
 	@JsonSerialize
+	@JsonProperty("type")
+	private String type;
+	
+	@JsonSerialize
 	@JsonProperty("name")
 	private String name;
 	
@@ -58,8 +62,8 @@ public class AppMetadata {
 	private String routeGuid;
 	
 	@JsonSerialize
-	@JsonProperty("_docker_image")
-	private String DockerImage;
+	@JsonProperty("docker_image")
+	private String dockerImage;
 	
 	@JsonSerialize
 	@JsonProperty("memory")
@@ -82,21 +86,22 @@ public class AppMetadata {
 	private String state;
 	
 	@JsonSerialize
-	@JsonProperty("docker_cred")
-	protected Map<String,String> docker_cred = new HashMap<String,String>();
+	@JsonProperty("dockerCred")
+	protected Map<String,String> dockerCred = new HashMap<String,String>();
 	
 	@JsonSerialize
 	@JsonProperty("environment_jsons")
-	private Map<String, String> environmentJsons = new HashMap<String,String>();
+	private Map<String, Object> environmentJsons = new HashMap<String,Object>();
 	
 	@SuppressWarnings("unchecked")
-	public void setMnameing(String key, Object val) {
+	public void setMapping(String key, Object val) {
 		switch(key) {
 			case "org": this.setOrg(val.toString()); break;
-			case "docker_cred": this.setDockerCred((HashMap<String, String>) val); break;
-			case "environment": this.setEnvironmentJsons( (HashMap<String, String>) val); break;
+			case "dockerCred": this.setDockerCred((HashMap<String, String>) val); break;
+			case "environment": this.setEnvironmentJsons( (HashMap<String, Object>) val); break;
 			case "domain": this.setDomain(val.toString()); break;
 			case "space": this.setSpace(val.toString()); break;
+			case "type": this.setType(val.toString()); break;
 			case "name": this.setName(val.toString()); break;
 			case "route": 
 			case "uri" : 
@@ -108,6 +113,18 @@ public class AppMetadata {
 		default:
 			log.info("Could not map parameter: " + key + " with value: " + val);
 		}
+	}
+
+	public String getType() {
+		return type;
+	}
+
+	public void setType(String type) {
+		this.type = type;
+	}
+	
+	public boolean isValid() {
+		return this.dockerImage != null;
 	}
 	
 	public String getOrgGuid() {
@@ -134,12 +151,12 @@ public class AppMetadata {
 		this.domainGuid = domainGuid;
 	}
 
-	public Map<String, String> getDocker_cred() {
-		return docker_cred;
+	public Map<String, String> getDockerCred() {
+		return dockerCred;
 	}
 
-	public void setDocker_cred(Map<String, String> docker_cred) {
-		this.docker_cred = docker_cred;
+	public void setDockerCred(Map<String, String> dockerCred) {
+		this.dockerCred = dockerCred;
 	}
 
 	public String getAppGuid() {
@@ -176,19 +193,11 @@ public class AppMetadata {
 		return content_map;
 	}
 	
-	public Map<String, String> getDockerCred() {
-		return docker_cred;
-	}
-
-	public void setDockerCred(Map<String, String> docker_cred) {
-		this.docker_cred = docker_cred;
-	}
-
-	public Map<String, String> getEnvironmentJsons() {
+	public Map<String, Object> getEnvironmentJsons() {
 		return environmentJsons;
 	}
 
-	public void setEnvironmentJsons(Map<String, String> environmentJsons) {
+	public void setEnvironmentJsons(Map<String, Object> environmentJsons) {
 		this.environmentJsons = environmentJsons;
 	}
 
@@ -241,11 +250,11 @@ public class AppMetadata {
 	}
 	
 	public String getDockerImage() {
-		return DockerImage;
+		return dockerImage;
 	}
 	
 	public void setDockerImage(String dockerImage) {
-		this.DockerImage = dockerImage;
+		this.dockerImage = dockerImage;
 	}
 	
 	@Override
@@ -254,7 +263,7 @@ public class AppMetadata {
 		int result = 1;
 		result = prime * result + ((name == null) ? 0 : name.hashCode());
 		result = prime * result
-				+ ((DockerImage == null) ? 0 : DockerImage.hashCode());
+				+ ((dockerImage == null) ? 0 : dockerImage.hashCode());
 		result = prime * result
 				+ ((domain == null) ? 0 : domain.hashCode());
 		result = prime * result + ((org == null) ? 0 : org.hashCode());
@@ -283,20 +292,6 @@ public class AppMetadata {
 		
 		return name.equals(other.name);
 	}	
-	
-	@Override
-	public String toString() {
-		return "AppMetadata [ org=" + org + ", space=" + space
-				+ ", name=" + name + ", domain=" + domain 
-				+ ", orgGuid=" + orgGuid + ", spaceGuid=" + spaceGuid 
-				+ ", domainGuid=" + domainGuid + ", appGuid=" + appGuid 
-				+ ", Uri=" + uri + ", RouteGuid=" + routeGuid
-				+ ", dockerImage=" + DockerImage + ", memory=" + memory
-				+ ", disk=" + disk + ", instances=" + instances
-				+ ", startCommand=" + startCommand + ", state=" + state
-				+ ", docker_cred=" + docker_cred + ", environmentJsons="
-				+ environmentJsons + "]";
-	}
 
 	public int getMemory() {
 		return memory;
@@ -327,6 +322,19 @@ public class AppMetadata {
 	
 	public void setStartCommand(String startCommand) {
 		this.startCommand = startCommand;
+	}
+	
+	@Override
+	public String toString() {
+		return "AppMetadata [org=" + org + ", space=" + space + ", orgGuid="
+				+ orgGuid + ", spaceGuid=" + spaceGuid + ", domain=" + domain
+				+ ", domainGuid=" + domainGuid + ", appGuid=" + appGuid
+				+ ", type=" + type + ", name=" + name + ", uri=" + uri
+				+ ", routeGuid=" + routeGuid + ", dockerImage=" + dockerImage
+				+ ", memory=" + memory + ", disk=" + disk + ", instances="
+				+ instances + ", startCommand=" + startCommand + ", state="
+				+ state + ", dockerCred=" + dockerCred
+				+ ", environmentJsons=" + environmentJsons + "]";
 	}
 	
 	@SuppressWarnings("unchecked")

@@ -1,5 +1,6 @@
 package org.boundless.cf.servicebroker.model;
 
+import java.lang.reflect.Type;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -18,6 +19,12 @@ import com.fasterxml.jackson.annotation.JsonAutoDetect;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonPrimitive;
+import com.google.gson.JsonSerializationContext;
+import com.google.gson.JsonSerializer;
 
 @Entity
 @Table(name = "service_bindings")
@@ -172,5 +179,41 @@ public class ServiceInstanceBinding {
 				+ credentials + ", syslogDrainUrl=" + syslogDrainUrl + "]";
 	}
 
+	public Map<String, Object> convertJsonStringToMap(String jsonContent) {
+        GsonBuilder gsonBuilder = new GsonBuilder();
+        gsonBuilder.registerTypeAdapter(Double.class,  new JsonSerializer<Double>() {
 
+              public JsonElement serialize(Double src, Type typeOfSrc,
+                                JsonSerializationContext context) {
+                            Integer value = (int)Math.round(src);
+                                        return new JsonPrimitive(value);
+                                                }
+                  });
+
+        Gson gson = gsonBuilder.create();
+        HashMap<String, Object> map = gson.fromJson(jsonContent, HashMap.class);
+        return map;
+	}
+	
+	public static Map<String, Object> convertToObjectMap(Map<String, String> srcMap) {
+		HashMap<String, Object> targetMap = new HashMap<String, Object>();
+		for(String key: srcMap.keySet()) {
+			String val = srcMap.get(key);
+			Object nativeVal = val;
+			try {
+				nativeVal = Double.valueOf(val);
+				Double double1 = (Double)nativeVal;
+				if (double1.doubleValue() == double1.intValue()) {
+					nativeVal = new Integer(double1.intValue());
+				}				
+			} catch(NumberFormatException ipe) {
+				String lowerVal = val.trim().toLowerCase();				
+				if (lowerVal.equals("true") || lowerVal.equals("false")) {
+					nativeVal = Boolean.valueOf(val);
+				} 
+			}
+			targetMap.put(key, nativeVal);
+		}
+		return targetMap;
+	}
 }

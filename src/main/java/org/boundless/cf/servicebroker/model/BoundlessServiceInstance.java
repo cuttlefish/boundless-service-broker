@@ -1,16 +1,12 @@
 package org.boundless.cf.servicebroker.model;
 
-import java.util.HashMap;
 import java.util.Map;
 
 import javax.persistence.CascadeType;
-import javax.persistence.CollectionTable;
-import javax.persistence.Column;
-import javax.persistence.ElementCollection;
 import javax.persistence.Entity;
 import javax.persistence.FetchType;
-import javax.persistence.JoinColumn;
-import javax.persistence.MapKeyColumn;
+import javax.persistence.Inheritance;
+import javax.persistence.InheritanceType;
 import javax.persistence.OneToOne;
 
 import com.fasterxml.jackson.annotation.JsonAutoDetect;
@@ -18,103 +14,99 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 
 @Entity(name="boundless_service_instances")
+@Inheritance(strategy=InheritanceType.TABLE_PER_CLASS)
 @JsonAutoDetect(getterVisibility = JsonAutoDetect.Visibility.NONE)
 public class BoundlessServiceInstance extends ServiceInstance {
 
 	// In Boundless, the service instance is actually tied to an app pushed to CF
+	// Store the metadata about the apps being pushed as part of a service instance
 	@JsonSerialize
-	@JsonProperty("app_metadata")
+	@JsonProperty("bsi_metadata")
 	@OneToOne(optional = true, orphanRemoval = true, fetch=FetchType.LAZY, cascade=CascadeType.ALL)
-	private BoundlessAppMetadata appMetadata; 
-
-	// any "metadata" key-value pairs    
-	//@ElementCollection(fetch = FetchType.LAZY)
-	//@MapKeyColumn(name="name")
-    //@Column(name="value")
-    //@CollectionTable(name="metadata", joinColumns=@JoinColumn(name="metadata_id"))
-	//protected Map<String,String> metadata = new HashMap<String,String>();
+	private BoundlessServiceInstanceMetadata boundlessSIMetadata; 
 
 	public BoundlessServiceInstance() {  
-		super(); 
+		super();
 	}
 	
 	public BoundlessServiceInstance(CreateServiceInstanceRequest request) {
 		super(request);
-		this.setAppMetadata(request.getParameters());
-		log.debug("App Metadata created: " + this.appMetadata);
-	}
-
-	public BoundlessServiceInstance(DeleteServiceInstanceRequest request) {
-		super(request);
+		this.initMetadata();
+		
+		// Pull up the default app config associated with the Service Plan
+		PlanConfig appConfig = request.getPlan().getPlanConfig();
+		this.resetMetadata(appConfig);
+		
+		// Let the config be overridden on based on request parameters
+		this.updateMetadata(request.getParameters());
+		log.debug("Service Instance created: " + this);
 	}
 
 	public BoundlessServiceInstance(UpdateServiceInstanceRequest request) {
 		super(request);
-		this.setAppMetadata(request.getParameters());
-		log.debug("App Metadata created: " + this.appMetadata);
+		this.initMetadata();
+		this.updateMetadata(request.getParameters());
+		log.debug("Service Instance updated: " + this);
 	}
-	
-	/*
-	public static BoundlessServiceInstance create(CreateServiceInstanceRequest request) {
-		BoundlessServiceInstance instance = new BoundlessServiceInstance(request);
-		instance.withAsync(true);
-		instance.getMetadata().put(CREATE_REQUEST_ID, instance.getId() );
-
-		return instance;
-	}
-
-	public static BoundlessServiceInstance update(BoundlessServiceInstance instance,
-			OperationState state) {
-		ServiceInstanceLastOperation silo = new ServiceInstanceLastOperation(
-				instance.getLastOperation().getDescription(),
-				state);
-		instance.withLastOperation(silo);
-		return instance;
-	}
-
-	public static BoundlessServiceInstance delete(BoundlessServiceInstance instance,
-			String deleteRequestId) {
-		instance.getMetadata().put(DELETE_REQUEST_ID, deleteRequestId);
-		ServiceInstanceLastOperation silo = new ServiceInstanceLastOperation(
-				deleteRequestId, OperationState.IN_PROGRESS);
-		instance.withLastOperation(silo);
-
-		return instance;
-	}
-	*/
 	
 	public void update(BoundlessServiceInstance updateTo) {
 		super.update(updateTo);
-		BoundlessAppMetadata updateToAppMetadata = updateTo.getAppMetadata();
-		this.appMetadata.update(updateToAppMetadata);
-		log.debug("App Metadata updated to: " + this.appMetadata);
+		BoundlessServiceInstanceMetadata updateMetadata = updateTo.getMetadata();
+		this.boundlessSIMetadata.update(updateMetadata);
+		log.debug("Service Instance updated to: " + this);
 	}
 	
 	@Override
 	public String toString() {
-		return "BoundlessServiceInstance [" + super.toString() + ", appMetadata=" + appMetadata
+		return "BoundlessServiceInstance [" + super.toString() + ", Metadata=" + boundlessSIMetadata
 				+ ", parameters=" + parameters + "]";
 	}
 
-	public BoundlessAppMetadata getAppMetadata() {
-		return appMetadata;
-	}
-
-	public void setAppMetadata(BoundlessAppMetadata appMetadata) {
-		this.appMetadata = appMetadata;
+	public void initMetadata() {
+		if (this.boundlessSIMetadata == null) {
+			this.boundlessSIMetadata = new BoundlessServiceInstanceMetadata();
+			boundlessSIMetadata.generateAndSetId();
+		}
 	}
 	
-	private void setAppMetadata(Map<String, Object> appMetadataMap) {
+	public BoundlessServiceInstanceMetadata getMetadata() {
+		return boundlessSIMetadata;
+	}
+
+	public void resetMetadata(PlanConfig planConfig) {		
+		for(BoundlessAppResource resource: this.boundlessSIMetadata.getAppResources()) {
+			resource.loadDefaults(planConfig);
+		}
+	}
+	
+	public void setMetadata(BoundlessServiceInstanceMetadata bsiMetadata) {
+		this.boundlessSIMetadata = bsiMetadata;
+		Thread.dumpStack();
+		log.info("Setting the metadata for Service Instance: " + this);
+	}
+	
+	private void updateMetadata(Map<String, Object> appMetadataMap) {
 		if (appMetadataMap == null) {
 			return;
 		}
 		
-		this.appMetadata = new BoundlessAppMetadata();
-		appMetadata.generateAndSetId();		
 		for(String key: appMetadataMap.keySet()) {
-			this.appMetadata.setMapping(key, appMetadataMap.get(key));
+			this.boundlessSIMetadata.setMapping(key, appMetadataMap.get(key));
 		}
-		log.info("App Metadata created from map: " + appMetadata);
+		checkFallback();
+		log.info("Service Instance updated: " + this);
+	}
+	
+	private void checkFallback() {
+		// if user didnt provide any org or space to push the app to,
+		// use the service instance's org & space guids to create the app instances.
+		if (boundlessSIMetadata.getOrg() == null) {
+			boundlessSIMetadata.setOrgGuid(this.getOrgGuid());
+		}
+		if (boundlessSIMetadata.getSpace() == null) {
+			boundlessSIMetadata.setSpaceGuid(this.getSpaceGuid());
+		}
+		log.info("Service Instance metadata updated with service instance org/space guid fallback: " + this);
 	}
 
 }

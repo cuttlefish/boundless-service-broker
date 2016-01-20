@@ -115,7 +115,8 @@ public class ServiceInstance {
 		this.creationTime = creationTime;
 	}
 
-	public ServiceInstance() { }
+	public ServiceInstance() { 
+	}
 	
 	public String getId() {
 		return id;

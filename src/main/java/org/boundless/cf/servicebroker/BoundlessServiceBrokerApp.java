@@ -1,7 +1,6 @@
 package org.boundless.cf.servicebroker;
 
 import org.apache.log4j.Logger;
-import org.boundless.cf.servicebroker.cfutils.CFAppManager;
 import org.boundless.cf.servicebroker.model.Catalog;
 import org.boundless.cf.servicebroker.service.BeanCatalogService;
 import org.boundless.cf.servicebroker.service.CatalogService;
@@ -27,14 +26,11 @@ public class BoundlessServiceBrokerApp  extends WebMvcConfigurerAdapter{
 	@Autowired
 	private ApplicationContext appContext;
 	
-	@Autowired
-	private CFAppManager cfAppHelper;
-	
 	public static void main(String[] args) {
 		SpringApplication.run(BoundlessServiceBrokerApp.class, args);
 	}
 	
-	
+	/*
     @Bean
     FilterRegistrationBean brokerApiVersionFilter() {
         FilterRegistrationBean bean = new FilterRegistrationBean();
@@ -42,7 +38,8 @@ public class BoundlessServiceBrokerApp  extends WebMvcConfigurerAdapter{
         bean.addUrlPatterns("/v2/*");
         return bean;
     }
-    
+    */
+	
     @Bean
     FilterRegistrationBean corsFilter() {
         FilterRegistrationBean bean = new FilterRegistrationBean();

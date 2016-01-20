@@ -1,19 +1,22 @@
 package org.boundless.cf.servicebroker.servicebroker.binding;
 
+import java.util.HashSet;
+
 import javax.annotation.PostConstruct;
 import javax.annotation.PreDestroy;
 
-import org.boundless.cf.servicebroker.model.AppMetadata;
+import org.boundless.cf.servicebroker.model.BoundlessAppResource;
 import org.boundless.cf.servicebroker.model.BoundlessServiceInstance;
-import org.boundless.cf.servicebroker.model.Credentials;
+import org.boundless.cf.servicebroker.model.BoundlessServiceInstanceMetadata;
 import org.boundless.cf.servicebroker.model.Plan;
+import org.boundless.cf.servicebroker.model.PlanConfig;
 import org.boundless.cf.servicebroker.model.PlanMetadata;
 import org.boundless.cf.servicebroker.model.ServiceDefinition;
 import org.boundless.cf.servicebroker.model.ServiceInstance;
 import org.boundless.cf.servicebroker.model.ServiceInstanceBinding;
 import org.boundless.cf.servicebroker.model.ServiceMetadata;
 import org.boundless.cf.servicebroker.repository.BoundlessServiceInstanceRepository;
-import org.boundless.cf.servicebroker.repository.ServiceDefinitionnRepository;
+import org.boundless.cf.servicebroker.repository.ServiceDefinitionRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
@@ -21,7 +24,7 @@ import org.springframework.stereotype.Component;
 public class DatabaseInitialiser  {
 
 	@Autowired
-	ServiceDefinitionnRepository serviceRepo;
+	ServiceDefinitionRepository serviceRepo;
 
 	@Autowired
 	BoundlessServiceInstanceRepository serviceInstanceRepo;
@@ -52,10 +55,10 @@ public class DatabaseInitialiser  {
 
         plan.setMetadata(planM);
 
-        Credentials creds = new Credentials();
-        creds.setUri("http://test-uri");
-        creds.setId("100");
-        plan.setCredentials(creds);
+        PlanConfig planDetails = new PlanConfig();
+        planDetails.setGeoServerDockerUri("http://test-uri");
+        planDetails.setId("100");
+        plan.setPlanConfig(planDetails);
 
         svc.addPlan(plan);
         return svc;
@@ -67,11 +70,19 @@ public class DatabaseInitialiser  {
     	svcI.setSpaceGuid("test-space-id");
     	svcI.setId("test-service-instance-id");
     	svcI.setPlanId("test-plan-id");
-    	svcI.setServiceId("test-service-id");
-    	
-
-    	
+    	svcI.setServiceId("test-service-id");    
+    	svcI.setMetadata(serviceInstanceMetdata());
     	return svcI;
+    }
+    
+    private BoundlessServiceInstanceMetadata serviceInstanceMetdata() {
+    	BoundlessServiceInstanceMetadata svcIM = new BoundlessServiceInstanceMetadata();
+    	svcIM.setOrg("test-org");
+    	svcIM.setSpace("test-space");
+    	svcIM.setDomain("test-domain");
+    	svcIM.setId("test-service-instance-metadata-id");
+    	svcIM.setAppResources(new HashSet<BoundlessAppResource>());    	
+    	return svcIM;
     }
 
     private ServiceInstanceBinding serviceBinding() {
@@ -82,7 +93,6 @@ public class DatabaseInitialiser  {
     	svcB.setInstanceId("test-service-instance-id");
     	svcB.setPlanId("test-plan-id");
     	svcB.setServiceId("test-service-id");
-
     	return svcB;
     }
 
@@ -92,8 +102,11 @@ public class DatabaseInitialiser  {
 		serviceRepo.save(service());
 		serviceInstanceRepo.save(serviceInstance());
 		System.out.println("Done loading db with service instance...");
-		ServiceInstance si = serviceInstanceRepo.findOne("test-service-instance-id");
-		System.out.println("Got service instance...: " + si);
+		try {
+			ServiceInstance si = serviceInstanceRepo.findOne("test-service-instance-id");
+			if (si != null)
+				System.out.println("Got service instance...");
+		} catch(Exception e) { e.printStackTrace(); }
     }
 
 

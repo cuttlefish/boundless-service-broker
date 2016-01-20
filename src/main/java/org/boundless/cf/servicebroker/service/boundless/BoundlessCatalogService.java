@@ -4,7 +4,7 @@ import org.apache.commons.collections.IteratorUtils;
 import org.apache.log4j.Logger;
 import org.boundless.cf.servicebroker.model.Catalog;
 import org.boundless.cf.servicebroker.model.ServiceDefinition;
-import org.boundless.cf.servicebroker.repository.ServiceDefinitionnRepository;
+import org.boundless.cf.servicebroker.repository.ServiceDefinitionRepository;
 import org.boundless.cf.servicebroker.service.CatalogService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -15,7 +15,7 @@ public class BoundlessCatalogService implements CatalogService {
 	private static final Logger LOG = Logger.getLogger(BoundlessCatalogService.class);
 
 	@Autowired
-	ServiceDefinitionnRepository serviceRepo;
+	ServiceDefinitionRepository serviceRepo;
 
 	@Override
 	public Catalog getCatalog() {		

@@ -20,11 +20,5 @@ public interface PlanRepository extends CrudRepository<Plan, String> {
 	Optional<Plan> findByPlanIdOrName(@Param("name") String name);
 	
 	@Query("SELECT p FROM Plan p where (p.name = :name or p.id = :name) and p.service.id = :service_id")
-	Optional<Plan> findByPlanIdOrNameAndServiceId(@Param("name") String name, @Param("service_id") String service_id);
-	
-	@Query("SELECT p.credentials.id FROM Plan p where p.id = :plan_id")
-	String getCredentialIdFromPlanId(@Param("plan_id") String plan_id);
-	
-	@Query("SELECT p FROM Plan p where p.credentials.id = :cred_id")
-	Optional<Plan> findPlanFromCredentialId(@Param("cred_id") String cred_id);
+	Optional<Plan> findByPlanIdOrNameAndServiceId(@Param("name") String name, @Param("service_id") String service_id);	
 }

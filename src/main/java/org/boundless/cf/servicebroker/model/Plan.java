@@ -15,6 +15,7 @@ import javax.persistence.Table;
 import org.apache.log4j.Logger;
 
 import com.fasterxml.jackson.annotation.JsonBackReference;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
@@ -53,16 +54,17 @@ public class Plan {
 	private PlanMetadata metadata;
 	
 	@OneToOne(orphanRemoval = true, cascade = CascadeType.ALL, fetch=FetchType.LAZY, optional = true)
-	@JoinColumn(name = "plan_cred_id", insertable=true, updatable=true, nullable=true, unique=true)
-	private Credentials credentials;
+	@JoinColumn(name = "planconfig_id", insertable=true, updatable=true, nullable=true, unique=true)
+	private PlanConfig planConfig;
 
-	
-	public Credentials getCredentials() {
-		return credentials;
+	//@JsonIgnore // FIX ME - remove comments
+	public PlanConfig getPlanConfig() {
+		return planConfig;
 	}
 
-	public void setCredentials(Credentials credentials) {
-		this.credentials = credentials;
+	@JsonProperty
+	public void setPlanConfig(PlanConfig planConfig) {
+		this.planConfig = planConfig;
 	}
 
 	public boolean isFree() {
@@ -76,7 +78,6 @@ public class Plan {
 	}	
 	
 	public String generateId() {		
-		//return UUID.nameUUIDFromBytes((this.getServiceName() + ":" + this.getName()).getBytes()).toString();
 		return UUID.randomUUID().toString();
 	}
 	
@@ -144,10 +145,10 @@ public class Plan {
 
 	@Override
 	public String toString() {
-		return "Plan [name=" + name + ", id=" + id + ", description="
-				+ description + ", free=" + isFree 
-				+ ", service=" + (service != null? service.getName(): " ")
-				+ ", metadata=" + metadata + "]";
+		return "Plan [id=" + id + ", name=" + name 
+				+ ", description=" + description + ", isFree=" + isFree
+				+ ", metadata=" + metadata + ", planConfig="
+				+ planConfig + "]";
 	}
 
 	@Override
@@ -197,8 +198,8 @@ public class Plan {
 			this.metadata.update(from.metadata);
 		}
 		
-		if (from.credentials != null) {
-			this.credentials.update(from.credentials);
+		if (from.planConfig != null) {
+			this.planConfig.update(from.planConfig);
 		}
 	}
 	

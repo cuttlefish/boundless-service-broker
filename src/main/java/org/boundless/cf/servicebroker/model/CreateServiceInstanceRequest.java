@@ -72,7 +72,11 @@ public class CreateServiceInstanceRequest extends ServiceInstanceRequest {
 	public ServiceDefinition getServiceDefinition() {
 		return serviceDefinition;
 	}
-
+	
+	public Plan getPlan() {
+		return serviceDefinition.findPlan(planId);
+	}
+	
 	public String getPlanId() {
 		return planId;
 	}

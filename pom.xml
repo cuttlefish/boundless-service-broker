@@ -3,11 +3,11 @@
 	<modelVersion>4.0.0</modelVersion>
 
 	<parent>
-		<groupId>org.springframework.cloud</groupId>
-		<artifactId>spring-cloud-starter-parent</artifactId>
-		<version>1.0.2.RELEASE</version>
+		<groupId>org.springframework.boot</groupId>
+		<artifactId>spring-boot-starter-parent</artifactId>
+		<version>1.3.1.RELEASE</version>
 	</parent>
-
+	
 	<artifactId>boundless-service-broker</artifactId>
 	<name>Boundless Service Broker </name>
 	<description>Boundless Service Broker</description>
@@ -24,13 +24,14 @@
  
 	<properties>
 		<java.version>1.8</java.version>
-		<java-semver.version>0.8.0</java-semver.version>
+		<java-semver.version>0.9.0</java-semver.version>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 		<project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
-		<reactive-streams.version>1.0.0</reactive-streams.version>
-        <reactor.version>2.1.0.BUILD-SNAPSHOT</reactor.version>
+		<cf-java-client.version>2.0.0.BUILD-SNAPSHOT</cf-java-client.version>
+		<reactor.version>2.5.0.BUILD-SNAPSHOT</reactor.version>
 	</properties>
-
+	
+	
 	<dependencies>
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
@@ -60,20 +61,17 @@
 		<dependency>
 		  <groupId>org.cloudfoundry</groupId>
 		  <artifactId>cloudfoundry-client-spring</artifactId>
-		  <version>2.0.0.BUILD-SNAPSHOT</version>
+		  <version>${cf-java-client.version}</version>
 		</dependency>
 		<dependency>
 		  <groupId>org.cloudfoundry</groupId>
 		  <artifactId>cloudfoundry-client</artifactId>
 		  <version>2.0.0.BUILD-SNAPSHOT</version>
 		</dependency>
-		
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-security</artifactId>
 		</dependency>
-
-		<!-- Hibernate -->
 		<dependency>
 			<groupId>org.hibernate</groupId>
 			<artifactId>hibernate-entitymanager</artifactId>
@@ -109,6 +107,10 @@
             <artifactId>json-simple</artifactId>
             <version>1.1.1</version>
         </dependency>
+        <dependency>
+			<groupId>com.google.code.gson</groupId>
+			<artifactId>gson</artifactId>
+		</dependency>
         <dependency>
 			<groupId>commons-beanutils</groupId>
 			<artifactId>commons-beanutils</artifactId>

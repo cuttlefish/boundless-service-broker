@@ -6,7 +6,9 @@ import java.util.Map;
 import org.apache.log4j.Logger;
 import org.boundless.cf.servicebroker.exception.ServiceBrokerException;
 import org.boundless.cf.servicebroker.exception.ServiceInstanceBindingExistsException;
-import org.boundless.cf.servicebroker.model.BoundlessAppMetadata;
+import org.boundless.cf.servicebroker.model.AppMetadata;
+import org.boundless.cf.servicebroker.model.BoundlessAppResourceType;
+import org.boundless.cf.servicebroker.model.BoundlessServiceInstanceMetadata;
 import org.boundless.cf.servicebroker.model.BoundlessServiceInstance;
 import org.boundless.cf.servicebroker.model.CreateServiceInstanceBindingRequest;
 import org.boundless.cf.servicebroker.model.DeleteServiceInstanceBindingRequest;
@@ -63,20 +65,26 @@ public class BoundlessServiceInstanceBindingService implements
 					"ServiceInstance operation is still in progress.");
 		}
 		
-		BoundlessAppMetadata appMetadata = bsi.getAppMetadata();
+		BoundlessServiceInstanceMetadata boundlessAppMetadata = bsi.getMetadata();
 		Map<String, String> credMap = new HashMap<String, String>();
-		if (appMetadata != null) {
-			credMap.put("geoserver_name", appMetadata.getGeoServerApp());
-			credMap.put("geoserver_guid", appMetadata.getGeoServerAppGuid());
-			credMap.put("geoserver_uri", appMetadata.getGeoServerRoute());
-			credMap.put("geocache_name", appMetadata.getGeoCacheApp());
-			credMap.put("geocache_guid", appMetadata.getGeoCacheAppGuid());
-			credMap.put("geocache_uri", appMetadata.getGeoCacheRoute());
-			credMap.put("org", appMetadata.getOrg());
-			credMap.put("space", appMetadata.getSpace());
-			credMap.put("geoserver_image", appMetadata.getGeoServerDockerImage());
-			credMap.put("geocache_image", appMetadata.getGeoCacheDockerImage());
-		}
+		
+    	credMap.put("org", boundlessAppMetadata.getOrg());
+		credMap.put("space", boundlessAppMetadata.getSpace());
+		
+		String[] resourceTypes = BoundlessAppResourceType.getTypes(); 
+    	for(String resourceType: resourceTypes) {
+	    	AppMetadata appMetadata = boundlessAppMetadata.getAppMetadata(resourceType);
+	    	if (appMetadata != null) {
+    			credMap.put(resourceType + "_name", appMetadata.getName());
+    			credMap.put(resourceType + "_guid", appMetadata.getAppGuid());
+    			credMap.put(resourceType + "_uri", 
+    							"https://" + appMetadata.getRoute() 
+    							+ "/" + boundlessAppMetadata.getDomain() 
+    							+ (resourceType.equals("geoserver")? "/geoserver/index.html":""));	    			
+    			credMap.put(resourceType + "_docker_image", appMetadata.getDockerImage());
+    		}
+    	}
+		
 		
 		ServiceInstanceBinding binding = new ServiceInstanceBinding(bindingId,
 				serviceInstanceId, bsi.getServiceId(), bsi.getPlanId(), credMap, null,
