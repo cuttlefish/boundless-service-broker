@@ -18,6 +18,7 @@ import org.boundless.cf.servicebroker.model.ServiceInstance;
 import org.boundless.cf.servicebroker.model.ServiceInstanceLastOperation;
 import org.boundless.cf.servicebroker.model.UpdateServiceInstanceRequest;
 import org.boundless.cf.servicebroker.repository.BoundlessAppMetadataRepository;
+import org.boundless.cf.servicebroker.repository.BoundlessServiceInstanceMetadataRepository;
 import org.boundless.cf.servicebroker.repository.BoundlessServiceInstanceRepository;
 import org.boundless.cf.servicebroker.repository.PlanRepository;
 import org.boundless.cf.servicebroker.service.CatalogService;
@@ -37,6 +38,9 @@ public class BoundlessServiceInstanceService implements ServiceInstanceService {
 
 	@Autowired
 	BoundlessServiceInstanceRepository serviceInstanceRepository;
+	
+	@Autowired
+	BoundlessServiceInstanceMetadataRepository serviceInstanceMetadataRepository;
 	
 	@Autowired
 	BoundlessAppMetadataRepository boundlessAppRepository;
@@ -155,13 +159,13 @@ public class BoundlessServiceInstanceService implements ServiceInstanceService {
 			ServiceBrokerException, ServiceInstanceDoesNotExistException {
 
 		BoundlessServiceInstance existingInstance = getInstance(request.getServiceInstanceId());
-		BoundlessServiceInstance updateToInstance = new BoundlessServiceInstance(request);
-		
 		if (existingInstance == null || existingInstance.getId() == null) {
 			return null;
 		}
-		existingInstance.update(updateToInstance);
-		log.debug("Updated service instance to: "
+		log.info("Update on Service Instance: " + request);
+		//BoundlessServiceInstance updateToInstance = new BoundlessServiceInstance(request);
+		existingInstance.update(request);
+		log.info("Updated service instance to: "
 				+ existingInstance);
 		
 		// First persist the state so if any calls into check the state it can show as being deleted...
@@ -184,10 +188,14 @@ public class BoundlessServiceInstanceService implements ServiceInstanceService {
 	}
 
 	private BoundlessServiceInstance getInstance(String id) {
-		if (id == null) {
+		if (id == null)
 			return null;
-		}
+		
 		BoundlessServiceInstance instance = serviceInstanceRepository.findOne(id);
+		if (instance == null)
+			return null;
+		
+		log.info("Located Service instance: " + instance);
 		return instance;
 	}
 
@@ -198,11 +206,11 @@ public class BoundlessServiceInstanceService implements ServiceInstanceService {
 		
 		// First persist the state so if any calls into check the state it can show as being deleted...
 		instance.setCurrentOperation(BoundlessServiceInstance.DELETE_REQUEST);
-		instance.setLastOperation(new ServiceInstanceLastOperation("Deprovisioning", OperationState.IN_PROGRESS));
+		instance.setLastOperation(new ServiceInstanceLastOperation("Deprovisioning", 
+										OperationState.IN_PROGRESS));
 		serviceInstanceRepository.save(instance);
 		
-		log.info("Starting deletion of service instance: "
-				+ instance);
+		log.info("Starting deletion of service instance: " + instance);
 		
 		this.deleteApp(instance);    	
 		instance.getLastOperation().setState(OperationState.SUCCEEDED);
@@ -211,17 +219,14 @@ public class BoundlessServiceInstanceService implements ServiceInstanceService {
 		if (instance.isCurrentOperationSuccessful()
 				&& instance.getCurrentOperation().equals(ServiceInstance.DELETE_REQUEST)) {
 			
-			BoundlessServiceInstanceMetadata boundlessSIMetadata = instance.getMetadata();
-			
+			BoundlessServiceInstanceMetadata boundlessSIMetadata = instance.getMetadata();			
 			if (boundlessSIMetadata != null) {
 				boundlessAppRepository.delete(boundlessSIMetadata);	
-			}
-			
+			}			
 			serviceInstanceRepository.delete(instance.getId());
 		}
 		
-		log.info("Done deletion of service instance: "
-				+ instance);
+		log.info("Done deletion of service instance: " + instance);
 		return instance;
 	}
 
@@ -235,32 +240,24 @@ public class BoundlessServiceInstanceService implements ServiceInstanceService {
 		
 		if (boundlessSIMetadata == null)
 			return;
-		/*
-    	CloudFoundryClient cfClient = appManager.getCfClient();
-	 	String orgId = appManager.orgId( boundlessSIMetadata.getOrg());
-    	String spaceId = appManager.spaceId( orgId, boundlessSIMetadata.getSpace());
-    	
-    	boundlessSIMetadata.setOrgGuid(orgId);
-    	boundlessSIMetadata.setSpaceGuid(spaceId);
-    	serviceInstance.setMetadata(boundlessSIMetadata);
-    	*/
     	log.info("Boundless App Metadata at create: " + boundlessSIMetadata);
     	
     	try {
-    	String[] resourceTypes = BoundlessAppResourceType.getTypes(); 
-    	for(String resourceType: resourceTypes) {
-	    	AppMetadata appMetadata = boundlessSIMetadata.getAppMetadata(resourceType);
-	    	//appManager.init(appMetadata);
-	    	if (appMetadata != null) {
-	    		CfAppManager appManager = new CfAppManager(cfClient, appMetadata);
-		    	appManager.push().get(); 
-		    	boundlessSIMetadata.updateAppMetadata(appManager.getAppMetadata());
+	    	String[] resourceTypes = BoundlessAppResourceType.getTypes(); 
+	    	for(String resourceType: resourceTypes) {
+		    	AppMetadata appMetadata = boundlessSIMetadata.getAppMetadata(resourceType);
+		    	//appManager.init(appMetadata);
+		    	if (appMetadata != null) {
+		    		CfAppManager appManager = new CfAppManager(cfClient, appMetadata);
+			    	appManager.push(); 
+			    	boundlessSIMetadata.updateAppMetadata(appManager.getAppMetadata());
+		    	}
 	    	}
-    	}
     	} catch(Exception e) {
     		e.printStackTrace();
     		this.deleteApp(serviceInstance);
-    		throw new ServiceBrokerException("Error with service instance creation: " + e.getMessage());
+    		throw new ServiceBrokerException("Error with service instance creation: " 
+    								+ e.getMessage());
     	}
     	
     	serviceInstance.getLastOperation().setState(OperationState.SUCCEEDED);
@@ -283,7 +280,7 @@ public class BoundlessServiceInstanceService implements ServiceInstanceService {
 	    	if (appMetadata != null) {
 	    		CfAppManager appManager = new CfAppManager(cfClient, appMetadata);
 		    	//appManager.init(appMetadata);
-		    	appManager.update().get(); 
+		    	appManager.update(); 
 		    	boundlessSIMetadata.updateAppMetadata(appManager.getAppMetadata());
 		    	log.info("Boundless App Metadata at end of update: " + boundlessSIMetadata);
 	    	}

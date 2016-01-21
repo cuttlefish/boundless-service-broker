@@ -42,6 +42,7 @@ public class BoundlessServiceInstance extends ServiceInstance {
 		log.debug("Service Instance created: " + this);
 	}
 
+	/*
 	public BoundlessServiceInstance(UpdateServiceInstanceRequest request) {
 		super(request);
 		this.initMetadata();
@@ -53,6 +54,13 @@ public class BoundlessServiceInstance extends ServiceInstance {
 		super.update(updateTo);
 		BoundlessServiceInstanceMetadata updateMetadata = updateTo.getMetadata();
 		this.boundlessSIMetadata.update(updateMetadata);
+		log.debug("Service Instance updated to: " + this);
+	}
+	*/
+	
+	public void update(UpdateServiceInstanceRequest request) {
+		
+		this.updateMetadata(request.getParameters());
 		log.debug("Service Instance updated to: " + this);
 	}
 	
@@ -90,7 +98,10 @@ public class BoundlessServiceInstance extends ServiceInstance {
 		}
 		
 		for(String key: appMetadataMap.keySet()) {
-			this.boundlessSIMetadata.setMapping(key, appMetadataMap.get(key));
+			Object val = appMetadataMap.get(key);
+			if (val == null)
+				continue;
+			this.boundlessSIMetadata.setMapping(key, val);
 		}
 		checkFallback();
 		log.info("Service Instance updated: " + this);
