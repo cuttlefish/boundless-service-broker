@@ -402,10 +402,9 @@ public class BoundlessAppResource {
 		}
 	}
 	
-	public AppMetadata dumpMetadata(AppMetadata appMetadata) {
+	public AppMetadataDTO dumpMetadata(AppMetadataDTO appMetadata) {
 		appMetadata.setName(this.getAppName());
 		appMetadata.setAppGuid(this.getAppGuid());
-		appMetadata.setRoute(this.getRoute());
 		appMetadata.setRouteGuid(this.getRouteGuid());
 		appMetadata.setInstances(this.getInstances());
 		appMetadata.setMemory(this.getMemory());
@@ -414,11 +413,16 @@ public class BoundlessAppResource {
 		appMetadata.setStartCommand(this.getStartCommand());
 		appMetadata.setDockerCred(this.getDockerCred());
 		appMetadata.setEnvironmentJsons(convertToObjectMap(this.getEnvironmentJsons()));
+		appMetadata.setRoute(this.getRoute());
+		
+		// If no route is provided, just go with the app name
+		if (appMetadata.getRoute() == null)
+			appMetadata.setRoute(this.getAppName());
 		
 		return appMetadata;
 	}
 	
-	public void update(AppMetadata appMetadata) {
+	public void update(AppMetadataDTO appMetadata) {
 		
 		// Update only the guids & state that come back from CFAppManager interactions
 		if (appMetadata.getState() != null) 

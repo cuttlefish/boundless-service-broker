@@ -70,18 +70,6 @@ public class ServiceInstance {
 	@OneToOne(optional = true, orphanRemoval = true, fetch=FetchType.LAZY, cascade=CascadeType.ALL)
 	protected ServiceInstanceLastOperation lastOperation; 
 
-	// In Boundless, the service instance is actually tied to an app pushed to CF
-	//@JsonSerialize
-	//@JsonProperty("cf_docker_app")
-	//@OneToOne(optional = true, orphanRemoval = true, fetch=FetchType.LAZY, cascade=CascadeType.ALL)
-	//private CFDockerApp cfApp; 
-
-
-	// any "parameters" tags/key-value pairs    
-	//@ElementCollection(fetch = FetchType.LAZY)
-	//@MapKeyColumn(name="name")
-    //@Column(name="value")
-    //@CollectionTable(name="service_instance_params", joinColumns=@JoinColumn(name="service_instance_params_id"))
 	@Transient
 	protected Map<String,Object> parameters = new HashMap<String,Object>();
 		
@@ -180,27 +168,12 @@ public class ServiceInstance {
 		return this;
 	}
 	
-	/*
-	public boolean isCurrentOperationCreate() {
-		return CREATE_REQUEST.equals(currentOperation);
-	}
-
-	public boolean isCurrentOperationUpdate() {
-		return UPDATE_REQUEST.equals(currentOperation);
-	}
-	
-	public boolean isCurrentOperationDelete() {
-		return DELETE_REQUEST.equals(currentOperation);
-	}
-	*/
-
 	public String getCurrentOperation() {
 		return currentOperation;
 	}
 
 	public void setCurrentOperation(String currentState) {
 		this.currentOperation = currentState;
-		log.info("Current Operation set to: " + currentState);
 	}
 	
 	public boolean isInProgress() {
@@ -258,18 +231,6 @@ public class ServiceInstance {
 			log.info("[" + key + ": " + parameters.get(key) + "]");
 		}
 	}
-	
-	/*
-	public <T> T getParameters(Class<T> cls) {
-		try {
-			T bean = cls.newInstance();
-			BeanUtils.populate(bean, parameters);
-			return bean;
-		} catch (Exception e) {
-			throw new IllegalArgumentException("Error mapping parameters to class of type " + cls.getName());
-		}
-	}
-	*/	
 	
 	public void update(ServiceInstance from) {
 		if (from == null)

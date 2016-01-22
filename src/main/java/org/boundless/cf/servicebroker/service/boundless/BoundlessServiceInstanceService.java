@@ -1,12 +1,14 @@
 package org.boundless.cf.servicebroker.service.boundless;
 
+import java.util.Map;
+
 import org.apache.log4j.Logger;
 import org.boundless.cf.servicebroker.cfutils.CfAppManager;
 import org.boundless.cf.servicebroker.exception.ServiceBrokerException;
 import org.boundless.cf.servicebroker.exception.ServiceInstanceDoesNotExistException;
 import org.boundless.cf.servicebroker.exception.ServiceInstanceExistsException;
 import org.boundless.cf.servicebroker.exception.ServiceInstanceUpdateNotSupportedException;
-import org.boundless.cf.servicebroker.model.AppMetadata;
+import org.boundless.cf.servicebroker.model.AppMetadataDTO;
 import org.boundless.cf.servicebroker.model.BoundlessAppResourceType;
 import org.boundless.cf.servicebroker.model.BoundlessServiceInstance;
 import org.boundless.cf.servicebroker.model.BoundlessServiceInstanceMetadata;
@@ -26,6 +28,8 @@ import org.boundless.cf.servicebroker.service.ServiceInstanceService;
 import org.cloudfoundry.client.CloudFoundryClient;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+
+import reactor.fn.tuple.Tuple2;
 
 @Service
 public class BoundlessServiceInstanceService implements ServiceInstanceService {
@@ -107,9 +111,6 @@ public class BoundlessServiceInstanceService implements ServiceInstanceService {
 							+ request.getServiceDefinitionId());
 		}
 
-		log.info("creating service instance: " + request.getServiceInstanceId()
-				+ " service definition: " + request.getServiceDefinitionId());
-		
 		BoundlessServiceInstance serviceInstance = new BoundlessServiceInstance(request);	
 		serviceInstance.setCurrentOperation(ServiceInstance.CREATE_REQUEST);
 		serviceInstance.setLastOperation(new ServiceInstanceLastOperation("Provisioning", OperationState.IN_PROGRESS));
@@ -191,12 +192,7 @@ public class BoundlessServiceInstanceService implements ServiceInstanceService {
 		if (id == null)
 			return null;
 		
-		BoundlessServiceInstance instance = serviceInstanceRepository.findOne(id);
-		if (instance == null)
-			return null;
-		
-		log.info("Located Service instance: " + instance);
-		return instance;
+		return serviceInstanceRepository.findOne(id);
 	}
 
 	private BoundlessServiceInstance deleteInstance(BoundlessServiceInstance instance) {
@@ -226,7 +222,7 @@ public class BoundlessServiceInstanceService implements ServiceInstanceService {
 			serviceInstanceRepository.delete(instance.getId());
 		}
 		
-		log.info("Done deletion of service instance: " + instance);
+		log.info("Deleted service instance: " + instance);
 		return instance;
 	}
 
@@ -240,21 +236,29 @@ public class BoundlessServiceInstanceService implements ServiceInstanceService {
 		
 		if (boundlessSIMetadata == null)
 			return;
-    	log.info("Boundless App Metadata at create: " + boundlessSIMetadata);
+    	log.debug("Boundless App Metadata at create: " + boundlessSIMetadata);
     	
     	try {
 	    	String[] resourceTypes = BoundlessAppResourceType.getTypes(); 
 	    	for(String resourceType: resourceTypes) {
-		    	AppMetadata appMetadata = boundlessSIMetadata.getAppMetadata(resourceType);
-		    	//appManager.init(appMetadata);
-		    	if (appMetadata != null) {
+		    	AppMetadataDTO appMetadata = boundlessSIMetadata.getAppMetadata(resourceType);
+		    	if (appMetadata != null && appMetadata.getInstances() > 0) {
 		    		CfAppManager appManager = new CfAppManager(cfClient, appMetadata);
-			    	appManager.push(); 
-			    	boundlessSIMetadata.updateAppMetadata(appManager.getAppMetadata());
+		    		Map<String, String> domainOrgSpaceGuids = appManager.getTopLevelGuids();
+			    	boundlessSIMetadata.updateGuids(domainOrgSpaceGuids);
+			    	
+			    	Tuple2<String, String> resultPair = appManager.push().get(); 
+			    	if (resultPair != null) {
+			    		String appId = resultPair.t2;
+			    		String routeId = resultPair.t1;
+				    	boundlessSIMetadata.getResource(resourceType).setAppGuid(appId);
+			    		boundlessSIMetadata.getResource(resourceType).setRouteGuid(routeId);			    		
+			    	}
 		    	}
 	    	}
     	} catch(Exception e) {
     		e.printStackTrace();
+    		// Cleanup all left-overs
     		this.deleteApp(serviceInstance);
     		throw new ServiceBrokerException("Error with service instance creation: " 
     								+ e.getMessage());
@@ -262,7 +266,7 @@ public class BoundlessServiceInstanceService implements ServiceInstanceService {
     	
     	serviceInstance.getLastOperation().setState(OperationState.SUCCEEDED);
     	serviceInstance.setMetadata(boundlessSIMetadata);
-     	log.info("Boundless App Metadata at end of push: " + boundlessSIMetadata);
+     	log.debug("Boundless App Metadata at end of push: " + boundlessSIMetadata);
 	}
 
 	public void updateApp(BoundlessServiceInstance serviceInstance) {
@@ -272,21 +276,18 @@ public class BoundlessServiceInstanceService implements ServiceInstanceService {
 		if (boundlessSIMetadata == null)
 			return;
 		
-     	log.info("Boundless App Metadata at update: " + boundlessSIMetadata);
-
+     	log.debug("Boundless App Metadata at update: " + boundlessSIMetadata);
     	String[] resourceTypes = BoundlessAppResourceType.getTypes(); 
     	for(String resourceType: resourceTypes) {
-	    	AppMetadata appMetadata = boundlessSIMetadata.getAppMetadata(resourceType);
-	    	if (appMetadata != null) {
+	    	AppMetadataDTO appMetadata = boundlessSIMetadata.getAppMetadata(resourceType);
+	    	if (appMetadata != null && appMetadata.getInstances() > 0) {
 	    		CfAppManager appManager = new CfAppManager(cfClient, appMetadata);
-		    	//appManager.init(appMetadata);
-		    	appManager.update(); 
-		    	boundlessSIMetadata.updateAppMetadata(appManager.getAppMetadata());
-		    	log.info("Boundless App Metadata at end of update: " + boundlessSIMetadata);
+		    	appManager.update().get();
 	    	}
     	}
     	
     	serviceInstance.getLastOperation().setState(OperationState.SUCCEEDED);
+    	log.debug("Boundless App Metadata at end of update: " + boundlessSIMetadata);
     	serviceInstance.setMetadata(boundlessSIMetadata);
 	}
 	
@@ -298,11 +299,12 @@ public class BoundlessServiceInstanceService implements ServiceInstanceService {
 		
 		String[] resourceTypes = BoundlessAppResourceType.getTypes(); 
     	for(String resourceType: resourceTypes) {
-	    	AppMetadata appMetadata = boundlessSIMetadata.getAppMetadata(resourceType);
-	    	if (appMetadata != null) {
-	    		CfAppManager appManager = new CfAppManager(cfClient, appMetadata);
-		    	//appManager.init(appMetadata);
-		    	appManager.delete().get(); 
+	    	AppMetadataDTO appMetadata = boundlessSIMetadata.getAppMetadata(resourceType);
+	    	if (appMetadata != null && appMetadata.getInstances() > 0) {
+	    		// We might not have the complete app or route guid filled in case of error during app push,
+	    		// Just clean up whatever is left over - do it separately for route & app
+	    		CfAppManager.deleteRoute(cfClient, appMetadata.getRouteGuid()).get();
+	    		CfAppManager.deleteApplications(cfClient, appMetadata.getSpaceGuid(), appMetadata.getName()).get();
 	    	}
     	}
     	boundlessAppRepository.delete(boundlessSIMetadata);

@@ -12,10 +12,13 @@ import com.fasterxml.jackson.annotation.JsonAutoDetect;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 
+/*
+ * A Data transfer object to move data around
+ */
 @JsonAutoDetect(getterVisibility = JsonAutoDetect.Visibility.NONE)
-public class AppMetadata {
+public class AppMetadataDTO {
 
-	private static transient final Logger log = Logger.getLogger(AppMetadata.class);
+	private static transient final Logger log = Logger.getLogger(AppMetadataDTO.class);
 
 	@JsonSerialize
 	@JsonProperty("org")
@@ -285,7 +288,7 @@ public class AppMetadata {
 			return false;
 		if (getClass() != obj.getClass())
 			return false;
-		AppMetadata other = (AppMetadata) obj;
+		AppMetadataDTO other = (AppMetadataDTO) obj;
 		if ((name == null) && (other.name != null)) {
 				return false;
 		} 
@@ -338,7 +341,7 @@ public class AppMetadata {
 	}
 	
 	@SuppressWarnings("unchecked")
-	public void update(AppMetadata updateTo) {
+	public void update(AppMetadataDTO updateTo) {
 		
 		if (updateTo.getOrg() != null) 
 			this.setOrg(updateTo.getOrg());

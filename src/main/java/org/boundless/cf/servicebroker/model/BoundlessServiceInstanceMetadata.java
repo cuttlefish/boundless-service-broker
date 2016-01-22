@@ -229,20 +229,36 @@ public class BoundlessServiceInstanceMetadata {
 			this.setOrgGuid(updateTo.getOrgGuid());
 	}
 	
-	public void setMapping(String key, Object val) {		
-		for (String type : BoundlessAppResourceType.getTypes()) {
-			if (BoundlessAppResourceType.isOfType(key, type)) {
-				setResourceMapping(type, key, val);
-				return;
-			}
-		}
-		
+	public void setMapping(String key, Object val) {
 		switch(key) {
 			case "org": this.setOrg(val.toString()); break;
 			case "domain": this.setDomain(val.toString()); break;
 			case "space": this.setSpace(val.toString()); break;
 			default:
+				for (String type : BoundlessAppResourceType.getTypes()) {
+					if (BoundlessAppResourceType.isOfType(key, type)) {
+						setResourceMapping(type, key, val);
+						return;
+					}
+				}
 				log.info("Could not map parameter: " + key + " with value: " + val);
+		}
+	}
+	
+	public void updateGuids( Map<String, String> map) {
+		for(String key: map.keySet()) {
+			String value = map.get(key);
+			switch(key) {
+			case "OrgGuid":
+				this.setOrgGuid(value);
+				break;
+			case "SpaceGuid":
+				this.setSpaceGuid(value);
+				break;
+			case "DomainGuid":
+				this.setDomainGuid(value);
+				break;
+			}
 		}
 	}
 	
@@ -295,15 +311,16 @@ public class BoundlessServiceInstanceMetadata {
 		return targetResource;		
 	}
 
-	public AppMetadata getAppMetadata(String type) {
+	public AppMetadataDTO getAppMetadata(String type) {
 		
 		BoundlessAppResource targetResource = getResource(type);		
 		if ( targetResource == null 
 				|| targetResource.getAppName() == null 
+				|| targetResource.getInstances() == 0
 				|| targetResource.getDockerImage() == null)
 			return null;		
 		
-		AppMetadata appMetadata = new AppMetadata();		
+		AppMetadataDTO appMetadata = new AppMetadataDTO();		
 		appMetadata.setOrg(this.getOrg());
 		appMetadata.setOrgGuid(this.getOrgGuid());
 		appMetadata.setDomain(this.getDomain());
@@ -316,7 +333,7 @@ public class BoundlessServiceInstanceMetadata {
 		return appMetadata;
 	}
 	
-	public void updateAppMetadata(AppMetadata appMetadata) {
+	public void updateAppMetadata(AppMetadataDTO appMetadata) {
 		String type = appMetadata.getType();
 		BoundlessAppResource targetResource = getResource(type);		
 		if ( targetResource == null)

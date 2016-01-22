@@ -6,7 +6,7 @@ import java.util.Map;
 import org.apache.log4j.Logger;
 import org.boundless.cf.servicebroker.exception.ServiceBrokerException;
 import org.boundless.cf.servicebroker.exception.ServiceInstanceBindingExistsException;
-import org.boundless.cf.servicebroker.model.AppMetadata;
+import org.boundless.cf.servicebroker.model.AppMetadataDTO;
 import org.boundless.cf.servicebroker.model.BoundlessAppResourceType;
 import org.boundless.cf.servicebroker.model.BoundlessServiceInstanceMetadata;
 import org.boundless.cf.servicebroker.model.BoundlessServiceInstance;
@@ -73,7 +73,7 @@ public class BoundlessServiceInstanceBindingService implements
 		
 		String[] resourceTypes = BoundlessAppResourceType.getTypes(); 
     	for(String resourceType: resourceTypes) {
-	    	AppMetadata appMetadata = boundlessAppMetadata.getAppMetadata(resourceType);
+	    	AppMetadataDTO appMetadata = boundlessAppMetadata.getAppMetadata(resourceType);
 	    	if (appMetadata != null) {
     			credMap.put(resourceType + "_name", appMetadata.getName());
     			credMap.put(resourceType + "_guid", appMetadata.getAppGuid());

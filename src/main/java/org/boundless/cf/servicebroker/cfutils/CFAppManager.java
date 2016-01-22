@@ -1,5 +1,7 @@
 package org.boundless.cf.servicebroker.cfutils;
 
+import java.util.HashMap;
+
 /*
  * Copyright 2013-2016 the original author or authors.
  *
@@ -25,7 +27,7 @@ import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
 import org.apache.log4j.Logger;
-import org.boundless.cf.servicebroker.model.AppMetadata;
+import org.boundless.cf.servicebroker.model.AppMetadataDTO;
 import org.cloudfoundry.client.CloudFoundryClient;
 import org.cloudfoundry.client.v2.applications.CreateApplicationRequest;
 import org.cloudfoundry.client.v2.applications.CreateApplicationRequest.CreateApplicationRequestBuilder;
@@ -50,34 +52,24 @@ import reactor.core.publisher.Mono;
 import reactor.fn.tuple.Tuple2;
 import reactor.rx.Stream;
 
-/*
-@Configuration
-@EnableAutoConfiguration
-@Lazy
-*/
 public class CfAppManager {
 
-	private AppMetadata appMetadata;
+	private AppMetadataDTO appMetadata;
 	private Mono<String> spaceId;
 	private Mono<String> organizationId;
 	private Mono<String> domainId;
 	private String appName;
-	private Mono<Boolean> routeNeedsCleanup;
-	private Mono<String> routeAssociationId;
-	private Mono<String> routeId;
-	private Mono<String> appId;
 	
-	//@Autowired
     private CloudFoundryClient cloudFoundryClient;
     private static final Logger log = Logger.getLogger(CfAppManager.class);
     
-    public CfAppManager(CloudFoundryClient cloudFoundryClient, AppMetadata appMetadata) {
+    public CfAppManager(CloudFoundryClient cloudFoundryClient, AppMetadataDTO appMetadata) {
     	this.cloudFoundryClient = cloudFoundryClient;
     	init(appMetadata);
     }
     
     
-    public void init(AppMetadata appMetadata) {
+    public void init(AppMetadataDTO appMetadata) {
     	this.appMetadata = appMetadata;	
     	this.appName = appMetadata.getName();
 		log.debug("Looking up orgId, spaceId, domainId with cfclient");
@@ -93,33 +85,25 @@ public class CfAppManager {
         this.domainId = requestDomainId(cloudFoundryClient, appMetadata.getDomain());
     }
 
-	public AppMetadata getAppMetadata() {
-		if (appId != null) 
-			appMetadata.setAppGuid(appId.get());
+	public Map<String, String> getTopLevelGuids() {
+		Map<String, String> map = new HashMap<String, String>();
 		
 		if (organizationId != null)
-			appMetadata.setOrgGuid(organizationId.get());
+			map.put("OrgGuid", organizationId.get());
 		
 		if (spaceId != null)
-			appMetadata.setSpaceGuid(spaceId.get());
+			map.put("SpaceGuid", spaceId.get());
 		
 		if (domainId != null)
-			appMetadata.setDomainGuid(domainId.get());
+			map.put("DomainGuid", domainId.get());
 		
-		if (routeId != null)
-			appMetadata.setRouteGuid(routeId.get());
-		
-		// This is to complete the route association to the app
-		//log.info("Route association: " + routeAssociationId.get());
-		
-		log.info("Returning updated appMetadata: " + appMetadata);
-		return appMetadata;
+		return map;
 	}
 
-    public Mono<Void> push() throws Exception {
+    public Mono<Tuple2<String, String>> push() throws Exception {
     	log.info("App push for: " + this.appMetadata);
     	
-    	this.routeId = Mono
+    	Mono<String> routeId = Mono
                 .when(this.domainId, this.spaceId)
                 .then(tuple -> {
                     String domainId2 = tuple.t1;
@@ -129,7 +113,7 @@ public class CfAppManager {
                 });
     	
 
-        this.appId = this.spaceId
+        Mono<String> appId = this.spaceId
                 .then(spaceId2 -> requestCreateApplicationId(this.cloudFoundryClient, 
                 											spaceId2, 
                 											this.appMetadata.getName(),
@@ -148,17 +132,18 @@ public class CfAppManager {
                     .log("stream.invokedUpdateAppState");
 
         return Mono
-                .when(this.routeId, this.appId)
+                .when(routeId, appId)
                 .then(tuple -> {
                     String routeId2 = tuple.t1;
                     String applicationId2 = tuple.t2;
                     return 
 	                    Mono.delay(15, TimeUnit.SECONDS)
-	                    .then( l -> requestAssociateRoute(this.cloudFoundryClient, applicationId2, routeId2)).after();
+	                    .then( l -> requestAssociateRoute(this.cloudFoundryClient, applicationId2, routeId2))
+	                    .map(r -> tuple);
                 })
                 .otherwise(throwable ->  {
-                	cleanUp(this.cloudFoundryClient, this.spaceId, this.appName, this.routeId);
-                	return Mono.error(throwable);
+                	cleanUp(this.cloudFoundryClient, this.spaceId, this.appName, routeId);
+                	return Mono.<Tuple2< String, String>>error(new Throwable("App Route association failed, " + throwable.getMessage()));
                 });
     }
 
@@ -184,13 +169,15 @@ public class CfAppManager {
     
     public Mono<Void>  delete() {
     	log.info("App Delete for: " + this.appMetadata);
-    	if (this.appMetadata.getAppGuid() != null) {
-    		return cleanUp(this.cloudFoundryClient, this.spaceId, this.appName, this.routeId);
-    	} else {
+    	if (this.appMetadata.getAppGuid() == null) 
     		return Mono.empty();
-    	}
+    		
+    	String routeId = this.appMetadata.getRouteGuid();
+    	Mono<String> route = (routeId != null) ? Mono.just(routeId) : Mono.just("");
+		return cleanUp(this.cloudFoundryClient, this.spaceId, this.appName, route);
     }
 
+    /*
     private static Mono<Void> cleanUp(CloudFoundryClient cloudFoundryClient, Mono<String> spaceId, String application, Mono<String> routeId) {
     	
     	if (routeId != null) {
@@ -208,19 +195,50 @@ public class CfAppManager {
     	return spaceId
                 .then(spaceId2 -> deleteApplications(cloudFoundryClient, spaceId2, application));
     }
+    */
+    
+    private static Mono<Void> cleanUp(CloudFoundryClient cloudFoundryClient, Mono<String> spaceId, String application, Mono<String> routeId) {
+    	
+    	return Mono.when(routeId, spaceId)
+    		.then( tuple -> {
+    			String routeId2 = tuple.t1;
+    			String spaceId2 = tuple.t2;
+    			
+    			return
+    				deleteRoute(cloudFoundryClient, routeId2)
+    				.log("stream.preDeleteApp")
+    				.and(deleteApplications(cloudFoundryClient, spaceId2, application))
+	        		.log("stream.postDeleteApps")
+	    			.after();
+    		})
+    		.otherwise(throwable -> {
+    			log.error("Error with app or route deletion..." + throwable);
+    			throwable.printStackTrace();
+    			return Mono.empty();
+    		});
+    }
 
-    private static Mono<Void> deleteApplication(CloudFoundryClient cloudFoundryClient, String applicationId) {
+    public static Mono<Void> deleteApplication(CloudFoundryClient cloudFoundryClient, String applicationId) {
+    	if (applicationId == null || applicationId == "")
+    		return Mono.empty();
+    	
         DeleteApplicationRequest request = DeleteApplicationRequest.builder()
                 .id(applicationId)
                 .build();
 
-        return cloudFoundryClient.applicationsV2().delete(request).log("stream.delete");
+        return Mono.delay(5, TimeUnit.SECONDS)
+                .then( l -> cloudFoundryClient.applicationsV2()
+                			.delete(request)
+                			.log("stream.postDeleteApp"))
+                .after();
     }
 
-    private static Mono<Void> deleteApplications(CloudFoundryClient cloudFoundryClient, String spaceId, String application) {
+    public static Mono<Void> deleteApplications(CloudFoundryClient cloudFoundryClient, String spaceId, String application) {
         return Stream
                 .from(listApplicationIds(cloudFoundryClient, spaceId, application))
+                .log("stream.postListAppIds")
                 .flatMap(applicationId -> deleteApplication(cloudFoundryClient, applicationId))
+                .log("stream.postDeleteApps")
                 .after();
     }
 
@@ -235,25 +253,15 @@ public class CfAppManager {
                 .map(resource -> resource.getMetadata().getId());
     }
 
-    private static Mono<Void> requestAssociateRoute(CloudFoundryClient cloudFoundryClient, String applicationId, String routeId) {
+    private static Mono<String> requestAssociateRoute(CloudFoundryClient cloudFoundryClient, String applicationId, String routeId) {
         AssociateRouteApplicationRequest request = AssociateRouteApplicationRequest.builder()
                 .applicationId(applicationId)
                 .id(routeId)
                 .build();
-
-        // FIX ME
-        // Time gap needed before associating a route with an app as Cloud Controller can drop things in the middle 
-        // if things have not completed (like app request or route creation)
-        /*
-        try {
-        	Thread.sleep(15000);
-        } catch(Exception e) {}
-		*/
-        
+      
         return cloudFoundryClient.routes().associateApplication(request)
         		.log("stream.associateRoute")
-        		.map(response -> response.getMetadata().getId())        		
-        		.after();
+        		.map(response -> response.getMetadata().getId());
     }
     
     private static boolean isDockerCredValid(Map<String, String> dockerCredsJson) {
@@ -283,8 +291,11 @@ public class CfAppManager {
                 .diskQuota(diskQuota)
                 .healthCheckTimeout(180);
     	
-    	if (isDockerCredValid(dockerCredsJson))
-			builder.dockerCredentialsJsons(dockerCredsJson);	
+    	if (isDockerCredValid(dockerCredsJson)) {
+			builder.dockerCredentialsJsons(dockerCredsJson);
+    	} else {
+    		log.error("Docker credential map does not contain user, password or email fields, ignoring it");
+    	}
     		
     	CreateApplicationRequest request = builder.build();
         return cloudFoundryClient.applicationsV2().create(request)
@@ -327,8 +338,11 @@ public class CfAppManager {
                 .command(startCommand)
                 .environmentJsons(envJson);
     	
-    	if (isDockerCredValid(dockerCredsJson))
+    	if (isDockerCredValid(dockerCredsJson)) {
 			builder.dockerCredentialsJsons(dockerCredsJson);
+	    } else {
+			log.error("Docker credential map does not contain user, password or email fields, ignoring it");
+		}
 
     	UpdateApplicationRequest request = builder.build(); 
         return cloudFoundryClient.applicationsV2().update(request)
@@ -349,7 +363,10 @@ public class CfAppManager {
                 .log("stream.requestCreateRoute");
     }
     
-    private static Mono<Void> deleteRoute(CloudFoundryClient cloudFoundryClient, String routeId) {
+    public static Mono<Void> deleteRoute(CloudFoundryClient cloudFoundryClient, String routeId) {
+    	if (routeId == null || routeId == "")
+    		return Mono.empty();
+    	
     	DeleteRouteRequest request = DeleteRouteRequest.builder()
                 .id(routeId)
                 .build();
@@ -362,36 +379,22 @@ public class CfAppManager {
         ListDomainsRequest request = ListDomainsRequest.builder()
                 .name(domain)
                 .build();
-
-        /*
+        
         return cloudFoundryClient.domains().list(request)
                 .flatMap(response -> Stream.fromIterable(response.getResources()))
                 .as(Stream::from)
                 .singleOrEmpty();
-        */
-        return cloudFoundryClient.domains().list(request)
-                .then(response -> Stream
-                        .fromIterable(response.getResources())
-                        .singleOrEmpty());
+        
     }
 
     private static Mono<String> requestDomainId(CloudFoundryClient cloudFoundryClient, String domain) {
-    	/*
+    	if (domain != null) {
     	return Mono
                 .just(domain)
                 .then(domain2 -> requestDomain(cloudFoundryClient, domain2))
-                .as(Stream::from)                                               // TODO: Remove once Mono.switchIfEmpty() exists
+                .as(Stream::from)                                               
                 .switchIfEmpty(requestFirstDomain(cloudFoundryClient))
-                .single()                                                       // TODO: Remove once Mono.switchIfEmpty() exists
-                .map(resource -> resource.getMetadata().getId());
-        
-       */
-    	if (domain != null) {
-    		
-    		return Mono
-                .just(domain)
-                .then(domain2 -> requestDomain(cloudFoundryClient, domain2))
-                .otherwiseIfEmpty(requestFirstDomain(cloudFoundryClient))
+                .single()                                                       
                 .map(resource -> resource.getMetadata().getId());
     	} 
     	
@@ -413,23 +416,6 @@ public class CfAppManager {
                 .map(resource -> resource.getMetadata().getId());
     }
     
-    private static Mono<String> requestExistingApplicationsRoute(CloudFoundryClient cloudFoundryClient, String routeId, String applicationId) {
-    	ListRouteApplicationsRequest request = ListRouteApplicationsRequest.builder()
-                .id(routeId)
-                .build();
-    	
-    	return cloudFoundryClient.routes().listApplications(request)
-                .flatMap(response ->Stream.fromIterable(response.getResources()))
-                .log("stream.ExistingAppsToRoute")
-                .as(Stream::from)
-                .single()
-                .log("stream.ExistingAppsToRouteSingle")
-                .map(resource -> resource.getMetadata().getId())
-                .doOnError( throwable -> {
-                	log.error("No application bound to the routeId: " + routeId);
-                });            
-    }
-
     private static Mono<DomainResource> requestFirstDomain(CloudFoundryClient cloudFoundryClient) {
         ListDomainsRequest request = ListDomainsRequest.builder()
                 .build();
@@ -444,18 +430,10 @@ public class CfAppManager {
                 .name(organization)
                 .build();
 
-        /*
         return cloudFoundryClient.organizations().list(request)
                 .flatMap(response -> Stream.fromIterable(response.getResources()))
                 .as(Stream::from)
                 .single()
-                .map(resource -> resource.getMetadata().getId());
-        */
-        
-        return cloudFoundryClient.organizations().list(request)
-                .then(response -> Stream
-                        .fromIterable(response.getResources())
-                        .single())
                 .map(resource -> resource.getMetadata().getId());
     }
 
@@ -466,43 +444,11 @@ public class CfAppManager {
                 .single();
     }
     
-    private static Mono<Tuple2<String, Boolean>> requestRouteIdWithFlag(CloudFoundryClient cloudFoundryClient, String domainId, String spaceId, String host) {
-    	
-    	return requestCreateRouteId(cloudFoundryClient, domainId, spaceId, host)
-    			.and(Mono.just(true))
-    			.otherwise( throwable -> 
-                		requestExistingRouteId(cloudFoundryClient, domainId, host)
-                		.and(Mono.just(false))
-                );
-    }
-    
     private static Mono<String> requesteAppSummary(CloudFoundryClient cloudFoundryClient, String applicationId) {
     	 
 		SummaryApplicationRequest request = SummaryApplicationRequest.builder()
 		        .id(applicationId)
 		        .build();
-		RestageApplicationRequest restageRequest = RestageApplicationRequest.builder()
-				.id(applicationId)
-				.build();
-		
-		Mono<String> packageState = null;
-         
-	  /* 
-       do { 
-    	   
-    	   packageState = cloudFoundryClient.applicationsV2().summary(request)
-    		   .log("stream.summaryApp1")
-    		   .map(response -> response.getPackageState());
-    	   try {
-    		   Thread.sleep(20);
-    	   }catch(Exception e) {}
-       } while (packageState.get(10, TimeUnit.SECONDS).equals("PENDING"));
-       */
-		/*
-		Mono<String>  appId = cloudFoundryClient.applicationsV2().restage(restageRequest)
-        		   .log("stream.summaryApp1")
-        		   .map(response -> response.getMetadata().getId());
-		*/
 		
        return cloudFoundryClient.applicationsV2().summary(request)
     		   .log("stream.summaryApp")
@@ -523,16 +469,6 @@ public class CfAppManager {
                             .single()
                             .map(resource -> resource.getMetadata().getId());
                 });
-        		/*
-                .otherwise(throwable -> {
-                    if (throwable instanceof NoSuchElementException) {
-                        return Mono.error(new IllegalArgumentException("Space " + space + " does not exist", throwable));
-                    } else {
-                        return Mono.error(throwable);
-                    }
-                });
-        		 */
-                
     }
 
 }

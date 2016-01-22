@@ -29,27 +29,7 @@ import org.springframework.context.annotation.Lazy;
 @Lazy
 public class CFClientUtility {
 
-	/*
-	@Bean
-	SpringCloudFoundryClient cloudFoundryClient(@Value("${cf.target}") String host,
-			@Value("${cf.username}") String username,
-			@Value("${cf.password}") String password,
-			@Value("${cf.skipSslValidation:true}") Boolean skipSslValidation) {
-
-		host = "https://api.classic.coke.cf-app.com";
-		username = "admin";
-		password = "f303d88a110c930a91ef";
-		
-		return SpringCloudFoundryClient.builder()
-				.host(host)
-				.username(username)
-				.password(password)
-				.skipSslValidation(skipSslValidation)
-				.build();
-	}
-	*/
-
-	@Bean
+    @Bean
 	SpringCloudFoundryClient cloudFoundryClient(
 			@Value("${cf.target}") String cfTarget,
 			@Value("${cf.admin.username}") String cfUsername,
