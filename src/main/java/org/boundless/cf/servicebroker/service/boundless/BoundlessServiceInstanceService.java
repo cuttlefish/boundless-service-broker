@@ -1,8 +1,7 @@
 package org.boundless.cf.servicebroker.service.boundless;
 
-import java.util.Map;
-
 import org.apache.log4j.Logger;
+import org.boundless.cf.servicebroker.cfutils.CfAppManager;
 import org.boundless.cf.servicebroker.cfutils.CfAppManager;
 import org.boundless.cf.servicebroker.exception.ServiceBrokerException;
 import org.boundless.cf.servicebroker.exception.ServiceInstanceDoesNotExistException;
@@ -239,18 +238,23 @@ public class BoundlessServiceInstanceService implements ServiceInstanceService {
     	log.debug("Boundless App Metadata at create: " + boundlessSIMetadata);
     	
     	try {
-	    	String[] resourceTypes = BoundlessAppResourceType.getTypes(); 
+    		String domain = boundlessSIMetadata.getDomain();
+    		String org = boundlessSIMetadata.getOrg();
+    		String space = boundlessSIMetadata.getSpace();
+    		
+    		// Initialize the Guids for Domain, Org & Space
+    		boundlessSIMetadata.setDomainGuid(CfAppManager.requestDomainId(cfClient, domain).get());
+	    	boundlessSIMetadata.setOrgGuid(CfAppManager.requestOrganizationId(cfClient, org).get());
+	    	boundlessSIMetadata.setSpaceGuid(CfAppManager.requestSpaceId(cfClient, boundlessSIMetadata.getOrgGuid(), space).get());
+
+    		String[] resourceTypes = BoundlessAppResourceType.getTypes(); 
 	    	for(String resourceType: resourceTypes) {
 		    	AppMetadataDTO appMetadata = boundlessSIMetadata.getAppMetadata(resourceType);
 		    	if (appMetadata != null && appMetadata.getInstances() > 0) {
-		    		CfAppManager appManager = new CfAppManager(cfClient, appMetadata);
-		    		Map<String, String> domainOrgSpaceGuids = appManager.getTopLevelGuids();
-			    	boundlessSIMetadata.updateGuids(domainOrgSpaceGuids);
-			    	
-			    	Tuple2<String, String> resultPair = appManager.push().get(); 
+			    	Tuple2<String, String> resultPair = CfAppManager.push(cfClient, appMetadata).get(); 
 			    	if (resultPair != null) {
-			    		String appId = resultPair.t2;
-			    		String routeId = resultPair.t1;
+			    		String appId = resultPair.t1;
+			    		String routeId = resultPair.t2;
 				    	boundlessSIMetadata.getResource(resourceType).setAppGuid(appId);
 			    		boundlessSIMetadata.getResource(resourceType).setRouteGuid(routeId);			    		
 			    	}
@@ -281,8 +285,7 @@ public class BoundlessServiceInstanceService implements ServiceInstanceService {
     	for(String resourceType: resourceTypes) {
 	    	AppMetadataDTO appMetadata = boundlessSIMetadata.getAppMetadata(resourceType);
 	    	if (appMetadata != null && appMetadata.getInstances() > 0) {
-	    		CfAppManager appManager = new CfAppManager(cfClient, appMetadata);
-		    	appManager.update().get();
+	    		CfAppManager.update(cfClient, appMetadata).get();
 	    	}
     	}
     	

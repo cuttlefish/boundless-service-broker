@@ -245,23 +245,6 @@ public class BoundlessServiceInstanceMetadata {
 		}
 	}
 	
-	public void updateGuids( Map<String, String> map) {
-		for(String key: map.keySet()) {
-			String value = map.get(key);
-			switch(key) {
-			case "OrgGuid":
-				this.setOrgGuid(value);
-				break;
-			case "SpaceGuid":
-				this.setSpaceGuid(value);
-				break;
-			case "DomainGuid":
-				this.setDomainGuid(value);
-				break;
-			}
-		}
-	}
-	
 	public void setResourceMapping(String type, String key, Object val) {
 		int index = type.length() + 1;
 		String modKey = key.substring(index);
