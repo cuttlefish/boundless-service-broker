@@ -125,8 +125,7 @@ public class BoundlessServiceInstanceMetadata {
 		this.domainGuid = domainGuid;
 	}
 
-	public synchronized Set<BoundlessAppResource> getAppResources() {
-		
+	public synchronized Set<BoundlessAppResource> getAppResources() {		
 		if (appResources.size() == 0) {
 			for(String type: BoundlessAppResourceType.getTypes()) {
 				BoundlessAppResource resource = new BoundlessAppResource(type);
@@ -229,8 +228,19 @@ public class BoundlessServiceInstanceMetadata {
 			this.setOrgGuid(updateTo.getOrgGuid());
 	}
 	
-	public void setMapping(String key, Object val) {
-		switch(key) {
+	public void overrideResourceDefns(Map<String, Object> appMetadataMap) {
+		if (appMetadataMap == null || appMetadataMap.size() == 0)
+			return;
+		
+		
+		for(String key: appMetadataMap.keySet()) {
+			Object val = appMetadataMap.get(key);
+			if (val == null)
+				continue;
+			
+			boolean paramHandled = false;
+			
+			switch(key) {
 			case "org": this.setOrg(val.toString()); break;
 			case "domain": this.setDomain(val.toString()); break;
 			case "space": this.setSpace(val.toString()); break;
@@ -238,13 +248,16 @@ public class BoundlessServiceInstanceMetadata {
 				for (String type : BoundlessAppResourceType.getTypes()) {
 					if (BoundlessAppResourceType.isOfType(key, type)) {
 						setResourceMapping(type, key, val);
-						return;
+						paramHandled = true;
+						break;
 					}
 				}
-				log.info("Could not map parameter: " + key + " with value: " + val);
+				if (!paramHandled) 
+					log.info("Could not map parameter: " + key + " with value: " + val);
+			}
 		}
 	}
-	
+
 	public void setResourceMapping(String type, String key, Object val) {
 		int index = type.length() + 1;
 		String modKey = key.substring(index);
@@ -272,6 +285,47 @@ public class BoundlessServiceInstanceMetadata {
 		}
 	}
 
+	public void updateResourceDefns(Map<String, Object> appMetadataMap) {
+		if (appMetadataMap == null || appMetadataMap.size() == 0)
+			return;
+		
+		for(String key: appMetadataMap.keySet()) {
+			Object val = appMetadataMap.get(key);
+			if (val == null)
+				continue;
+
+			for (String type : BoundlessAppResourceType.getTypes()) {
+				if (BoundlessAppResourceType.isOfType(key, type)) {
+					updateResourceMapping(type, key, val);
+				}
+			}
+		}
+	}
+	
+	/*
+	 * Only update specific attributes like instances, memory, disk, env.
+	 */
+	public void updateResourceMapping(String type, String key, Object val) {
+		int index = type.length() + 1;
+		String modKey = key.substring(index);
+		
+		BoundlessAppResource resource = getResource(type);
+		if (resource == null) {
+			log.info("Ignoring update of Resource type: " + type + " as it was not created earlier");
+			return;
+		}
+		
+		// We will only allow override of the memory, disk, instances or env variables
+		switch(modKey.toLowerCase()) {
+			case "instances": resource.setInstances(Integer.parseInt(val.toString())); break;
+			case "memory": resource.setMemory(Integer.parseInt(val.toString())); break;
+			case "disk": resource.setDisk(Integer.parseInt(val.toString())); break;
+			case "environment": resource.setEnvironmentJsons( (Map<String,String>) val); break;
+			default:
+				log.debug("Ignoring update of app parameter: " + key + " with value: " + val);
+		}
+	}
+
 	public synchronized void addResource(BoundlessAppResource resource) {
 		if (!appResources.contains(resource)) {
 			this.appResources.add(resource);
@@ -294,7 +348,7 @@ public class BoundlessServiceInstanceMetadata {
 		return targetResource;		
 	}
 
-	public AppMetadataDTO getAppMetadata(String type) {
+	public AppMetadataDTO generateAppMetadata(String type) {
 		
 		BoundlessAppResource targetResource = getResource(type);		
 		if ( targetResource == null 
@@ -316,7 +370,7 @@ public class BoundlessServiceInstanceMetadata {
 		return appMetadata;
 	}
 	
-	public void updateAppMetadata(AppMetadataDTO appMetadata) {
+	public void updateFromAppMetadata(AppMetadataDTO appMetadata) {
 		String type = appMetadata.getType();
 		BoundlessAppResource targetResource = getResource(type);		
 		if ( targetResource == null)
@@ -338,6 +392,8 @@ public class BoundlessServiceInstanceMetadata {
 		targetResource.update(appMetadata);
 		return;
 	}
+	
+
 
 	@Override
 	public String toString() {

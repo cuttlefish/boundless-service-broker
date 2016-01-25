@@ -73,7 +73,7 @@ public class BoundlessServiceInstanceBindingService implements
 		
 		String[] resourceTypes = BoundlessAppResourceType.getTypes(); 
     	for(String resourceType: resourceTypes) {
-	    	AppMetadataDTO appMetadata = boundlessAppMetadata.getAppMetadata(resourceType);
+	    	AppMetadataDTO appMetadata = boundlessAppMetadata.generateAppMetadata(resourceType);
 	    	if (appMetadata != null) {
     			credMap.put(resourceType + "_name", appMetadata.getName());
     			credMap.put(resourceType + "_guid", appMetadata.getAppGuid());

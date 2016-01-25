@@ -31,92 +31,52 @@ public class BoundlessServiceInstance extends ServiceInstance {
 	
 	public BoundlessServiceInstance(CreateServiceInstanceRequest request) {
 		super(request);
-		this.initMetadata();
-		
 		// Pull up the default app config associated with the Service Plan
-		PlanConfig appConfig = request.getPlan().getPlanConfig();
-		this.resetMetadata(appConfig);
+		// And use that to initialize the default settings for service instances
 		
-		// Let the config be overridden on based on request parameters
-		this.updateMetadata(request.getParameters());
+		this.initMetadata(request);
 		log.debug("Service Instance created: " + this);
 	}
 
-	/*
-	public BoundlessServiceInstance(UpdateServiceInstanceRequest request) {
-		super(request);
-		this.initMetadata();
-		this.updateMetadata(request.getParameters());
-		log.debug("Service Instance updated: " + this);
-	}
-	
-	public void update(BoundlessServiceInstance updateTo) {
-		super.update(updateTo);
-		BoundlessServiceInstanceMetadata updateMetadata = updateTo.getMetadata();
-		this.boundlessSIMetadata.update(updateMetadata);
-		log.debug("Service Instance updated to: " + this);
-	}
-	*/
-	
-	public void update(UpdateServiceInstanceRequest request) {
-		
-		this.updateMetadata(request.getParameters());
-		log.debug("Service Instance updated to: " + this);
-	}
-	
-	@Override
-	public String toString() {
-		return "BoundlessServiceInstance [" + super.toString() + ", Metadata=" + boundlessSIMetadata
-				+ ", parameters=" + parameters + "]";
-	}
-
-	public void initMetadata() {
+	public void initMetadata(CreateServiceInstanceRequest request) {
+		PlanConfig planConfig = request.getPlan().getPlanConfig();
 		if (this.boundlessSIMetadata == null) {
 			this.boundlessSIMetadata = new BoundlessServiceInstanceMetadata();
 			boundlessSIMetadata.generateAndSetId();
 		}
+		
+		// Pull the plan provided options (memory/instances/docker images) and load it as default
+		for(BoundlessAppResource resource: this.boundlessSIMetadata.getAppResources()) {
+			resource.loadDefaults(planConfig);
+		}
+		
+		// If user has provided some overrides, use that on top
+		this.boundlessSIMetadata.overrideResourceDefns(request.getParameters());
+		
+		// use the service instance's org & space guids
+		boundlessSIMetadata.setOrgGuid(this.getOrgGuid());
+		boundlessSIMetadata.setSpaceGuid(this.getSpaceGuid());
+		
+		log.info("Service Instance metadata overridden on Creation: " + this);
 	}
 	
+	public void update(UpdateServiceInstanceRequest request) {		
+		this.boundlessSIMetadata.updateResourceDefns(request.getParameters());
+		log.info("Service Instance updated to: " + this);
+	}
+	
+	@Override
+	public String toString() {
+		return "BoundlessServiceInstance [" + super.toString() + ", Metadata=" + boundlessSIMetadata + "]";
+	}
+
 	public BoundlessServiceInstanceMetadata getMetadata() {
 		return boundlessSIMetadata;
 	}
 
-	public void resetMetadata(PlanConfig planConfig) {		
-		for(BoundlessAppResource resource: this.boundlessSIMetadata.getAppResources()) {
-			resource.loadDefaults(planConfig);
-		}
-	}
-	
 	public void setMetadata(BoundlessServiceInstanceMetadata bsiMetadata) {
 		this.boundlessSIMetadata = bsiMetadata;
-		log.info("Setting the metadata for Service Instance: " + this);
 	}
 	
-	private void updateMetadata(Map<String, Object> appMetadataMap) {
-		if (appMetadataMap == null) {
-			return;
-		}
-		
-		for(String key: appMetadataMap.keySet()) {
-			Object val = appMetadataMap.get(key);
-			if (val == null)
-				continue;
-			this.boundlessSIMetadata.setMapping(key, val);
-		}
-		checkFallback();
-		log.info("Service Instance updated: " + this);
-	}
-	
-	private void checkFallback() {
-		// if user didnt provide any org or space to push the app to,
-		// use the service instance's org & space guids to create the app instances.
-		if (boundlessSIMetadata.getOrg() == null) {
-			boundlessSIMetadata.setOrgGuid(this.getOrgGuid());
-		}
-		if (boundlessSIMetadata.getSpace() == null) {
-			boundlessSIMetadata.setSpaceGuid(this.getSpaceGuid());
-		}
-		log.info("Service Instance metadata updated with service instance org/space guid fallback: " + this);
-	}
 
 }

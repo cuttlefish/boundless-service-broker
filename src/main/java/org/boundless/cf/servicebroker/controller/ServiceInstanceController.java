@@ -110,8 +110,12 @@ public class ServiceInstanceController extends BaseController {
 				+ ", deleteServiceInstanceBinding(), serviceInstanceId = " + instanceId 
 				+ ", serviceId = " + serviceId
 				+ ", planId = " + planId);
-		ServiceInstance instance = service.deleteServiceInstance(
-				new DeleteServiceInstanceRequest(instanceId, serviceId, planId, acceptsIncomplete));
+		
+		ServiceInstance instance = null;
+		try {
+			instance = service.deleteServiceInstance(
+					new DeleteServiceInstanceRequest(instanceId, serviceId, planId, acceptsIncomplete));
+		} catch(ServiceBrokerException e) { }
 		
 		if (instance == null) {
 			return new ResponseEntity<>("{}", HttpStatus.GONE);

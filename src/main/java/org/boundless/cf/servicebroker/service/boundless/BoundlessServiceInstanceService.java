@@ -25,6 +25,7 @@ import org.boundless.cf.servicebroker.repository.PlanRepository;
 import org.boundless.cf.servicebroker.service.CatalogService;
 import org.boundless.cf.servicebroker.service.ServiceInstanceService;
 import org.cloudfoundry.client.CloudFoundryClient;
+import org.cloudfoundry.client.v2.applications.SummaryApplicationResponse;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -89,11 +90,14 @@ public class BoundlessServiceInstanceService implements ServiceInstanceService {
 
 		if (request == null 
 				|| request.getServiceDefinitionId() == null 
+				|| request.getOrganizationGuid() == null 
 				|| request.getPlanId() == null 
+				|| request.getServiceInstanceId() == null
 				|| request.getParameters() == null) {
 			throw new ServiceBrokerException(
 					"invalid CreateServiceInstanceRequest object.");
 		}
+
 
 		if (request.getServiceInstanceId() != null
 				&& getInstance(request.getServiceInstanceId()) != null) {
@@ -115,7 +119,7 @@ public class BoundlessServiceInstanceService implements ServiceInstanceService {
 		serviceInstance.setLastOperation(new ServiceInstanceLastOperation("Provisioning", OperationState.IN_PROGRESS));
     	serviceInstance = saveInstance(serviceInstance);
     	
-    	createApp(serviceInstance);
+		createApp(serviceInstance);
     	serviceInstance = saveInstance(serviceInstance);
 
 		log.info("Registered service instance: "
@@ -238,26 +242,54 @@ public class BoundlessServiceInstanceService implements ServiceInstanceService {
     	log.debug("Boundless App Metadata at create: " + boundlessSIMetadata);
     	
     	try {
-    		String domain = boundlessSIMetadata.getDomain();
-    		String org = boundlessSIMetadata.getOrg();
-    		String space = boundlessSIMetadata.getSpace();
+    		// These org & space guids come from the service instance creation
+    		String orgGuid = boundlessSIMetadata.getOrgGuid();
+    		String spaceGuid = boundlessSIMetadata.getSpaceGuid();
     		
-    		// Initialize the Guids for Domain, Org & Space
-    		boundlessSIMetadata.setDomainGuid(CfAppManager.requestDomainId(cfClient, domain).get());
-	    	boundlessSIMetadata.setOrgGuid(CfAppManager.requestOrganizationId(cfClient, org).get());
-	    	boundlessSIMetadata.setSpaceGuid(CfAppManager.requestSpaceId(cfClient, boundlessSIMetadata.getOrgGuid(), space).get());
-
+    		// If the user has provided explicitly their own org & spaces to create the apps
+    		// then lookup for the associated guids and go with those.
+    		// instead of going with the service instance org/space guids.
+      		String org = boundlessSIMetadata.getOrg();
+    		if (org != null) {
+        		orgGuid = CfAppManager.requestOrganizationId(cfClient, org).get();
+        		boundlessSIMetadata.setOrgGuid(orgGuid);
+    		}
+    		
+       		String space = boundlessSIMetadata.getSpace();
+    		if (space != null) {
+    			spaceGuid = CfAppManager.requestSpaceId(cfClient, 
+    					boundlessSIMetadata.getOrgGuid(), 
+    					boundlessSIMetadata.getSpace()
+    					).get();
+				boundlessSIMetadata.setSpaceGuid(spaceGuid);
+    		}
+    		
+    		// Look up the domain Guid either based on provided domain name or very first available domain.
+    		String domainGuid = CfAppManager.requestDomainId(cfClient, 
+    				boundlessSIMetadata.getDomain()
+    				).get();
+    		boundlessSIMetadata.setDomainGuid(domainGuid);
+    		
+    		// If we went with the default domain as no domain was specified,
+    		// fill the domain name by requesting for domain details using the above returned domainId.
+    		if (boundlessSIMetadata.getDomain() == null) {
+    			boundlessSIMetadata.setDomain(CfAppManager.requestDomainName(cfClient, domainGuid).get());
+    		}
+    		
     		String[] resourceTypes = BoundlessAppResourceType.getTypes(); 
 	    	for(String resourceType: resourceTypes) {
-		    	AppMetadataDTO appMetadata = boundlessSIMetadata.getAppMetadata(resourceType);
-		    	if (appMetadata != null && appMetadata.getInstances() > 0) {
-			    	Tuple2<String, String> resultPair = CfAppManager.push(cfClient, appMetadata).get(); 
-			    	if (resultPair != null) {
-			    		String appId = resultPair.t1;
-			    		String routeId = resultPair.t2;
-				    	boundlessSIMetadata.getResource(resourceType).setAppGuid(appId);
-			    		boundlessSIMetadata.getResource(resourceType).setRouteGuid(routeId);			    		
-			    	}
+		    	AppMetadataDTO appMetadata = boundlessSIMetadata.generateAppMetadata(resourceType);
+		    	if (appMetadata == null || appMetadata.getInstances() == 0) {
+		    		continue;
+		    	}
+		    	
+		    	// Need a get() on function call to really execute the logic in Reactive
+	    		Tuple2<String, String> resultPair = CfAppManager.push(cfClient, appMetadata).get(); 
+		    	if (resultPair != null) {
+		    		String appId = resultPair.t1;
+		    		String routeId = resultPair.t2;
+			    	boundlessSIMetadata.getResource(resourceType).setAppGuid(appId);
+		    		boundlessSIMetadata.getResource(resourceType).setRouteGuid(routeId);
 		    	}
 	    	}
     	} catch(Exception e) {
@@ -283,8 +315,9 @@ public class BoundlessServiceInstanceService implements ServiceInstanceService {
      	log.debug("Boundless App Metadata at update: " + boundlessSIMetadata);
     	String[] resourceTypes = BoundlessAppResourceType.getTypes(); 
     	for(String resourceType: resourceTypes) {
-	    	AppMetadataDTO appMetadata = boundlessSIMetadata.getAppMetadata(resourceType);
+	    	AppMetadataDTO appMetadata = boundlessSIMetadata.generateAppMetadata(resourceType);
 	    	if (appMetadata != null && appMetadata.getInstances() > 0) {
+	    		// Need a get() on function call to really execute the logic in Reactive
 	    		CfAppManager.update(cfClient, appMetadata).get();
 	    	}
     	}
@@ -302,10 +335,11 @@ public class BoundlessServiceInstanceService implements ServiceInstanceService {
 		
 		String[] resourceTypes = BoundlessAppResourceType.getTypes(); 
     	for(String resourceType: resourceTypes) {
-	    	AppMetadataDTO appMetadata = boundlessSIMetadata.getAppMetadata(resourceType);
+	    	AppMetadataDTO appMetadata = boundlessSIMetadata.generateAppMetadata(resourceType);
 	    	if (appMetadata != null && appMetadata.getInstances() > 0) {
 	    		// We might not have the complete app or route guid filled in case of error during app push,
 	    		// Just clean up whatever is left over - do it separately for route & app
+	    		// Need a get() on function call to really execute the logic in Reactive
 	    		CfAppManager.deleteRoute(cfClient, appMetadata.getRouteGuid()).get();
 	    		CfAppManager.deleteApplications(cfClient, appMetadata.getSpaceGuid(), appMetadata.getName()).get();
 	    	}

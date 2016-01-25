@@ -35,6 +35,7 @@ import org.cloudfoundry.client.v2.applications.SummaryApplicationRequest;
 import org.cloudfoundry.client.v2.applications.UpdateApplicationRequest;
 import org.cloudfoundry.client.v2.applications.UpdateApplicationRequest.UpdateApplicationRequestBuilder;
 import org.cloudfoundry.client.v2.domains.DomainResource;
+import org.cloudfoundry.client.v2.domains.GetDomainRequest;
 import org.cloudfoundry.client.v2.domains.ListDomainsRequest;
 import org.cloudfoundry.client.v2.organizations.ListOrganizationsRequest;
 import org.cloudfoundry.client.v2.routes.AssociateRouteApplicationRequest;
@@ -66,6 +67,16 @@ public class CfAppManager {
     	return
     		requestFirstDomain(cloudFoundryClient)
    		 	.map(resource -> resource.getMetadata().getId());
+    }
+    
+    public static Mono<String> requestDomainName(CloudFoundryClient cloudFoundryClient, String domainId) {
+    	
+    	GetDomainRequest request = GetDomainRequest.builder()
+                    .domainId(domainId)
+                    .build();
+            
+            return cloudFoundryClient.domains().get(request)
+                    .map(response -> response.getEntity().getName());
     }
     
     public static Mono<String> requestOrganizationId(CloudFoundryClient cloudFoundryClient, String organization) {
@@ -134,7 +145,7 @@ public class CfAppManager {
                 											appMetadata.getDockerCred()
                 											)
 					.log("stream.invokedRequestCreateApp")
-                    .then(applicationId2 -> requesteAppSummary(cloudFoundryClient, applicationId2))
+                    .then(applicationId2 -> checkAppSummary(cloudFoundryClient, applicationId2))
                     .log("stream.invokedRequestAppSummary")
                     .then(applicationId3 -> requestUpdateAppState(cloudFoundryClient, applicationId3, "STARTED"))
                     .log("stream.invokedUpdateAppState");
@@ -145,7 +156,7 @@ public class CfAppManager {
                     String routeId2 = tuple.t2;
                     String applicationId2 = tuple.t1;
                     return 
-	                    Mono.delay(25, TimeUnit.SECONDS)
+	                    Mono.delay(15, TimeUnit.SECONDS)
 	                    .then( l -> requestAssociateRoute(cloudFoundryClient, applicationId2, routeId2))
 	                    .map(r -> tuple);
                 })
@@ -231,7 +242,7 @@ public class CfAppManager {
     		return Mono.empty();
     	
         DeleteApplicationRequest request = DeleteApplicationRequest.builder()
-                .id(applicationId)
+                .applicationId(applicationId)
                 .build();
 
         return Mono.delay(15, TimeUnit.SECONDS)
@@ -264,12 +275,27 @@ public class CfAppManager {
     private static Mono<String> requestAssociateRoute(CloudFoundryClient cloudFoundryClient, String applicationId, String routeId) {
         AssociateRouteApplicationRequest request = AssociateRouteApplicationRequest.builder()
                 .applicationId(applicationId)
-                .id(routeId)
+                .routeId(routeId)
                 .build();
       
-        return cloudFoundryClient.routes().associateApplication(request)
-        		.log("stream.associateRoute")
-        		.map(response -> response.getMetadata().getId());
+        Mono<String> status = null;
+        int trials = 0;
+        
+        while (trials++ < 2) {
+        	try {
+	        	status = cloudFoundryClient.routes().associateApplication(request)
+	        		.log("stream.associateRoute")
+	        		.map(response -> response.getMetadata().getId());
+        	} catch(Exception e) {
+        		log.error("Error on associateRoute:" + e.getMessage());
+        		if (trials < 2)
+        			log.error("Attempting retry once more");
+        		else
+        			throw e;
+        	}
+    	} 
+        	
+        return status;
     }
     
     private static boolean isDockerCredValid(Map<String, String> dockerCredsJson) {
@@ -314,7 +340,7 @@ public class CfAppManager {
     
     private static Mono<String> requestUpdateAppState(CloudFoundryClient cloudFoundryClient, String applicationId, String state) {
         UpdateApplicationRequest request = UpdateApplicationRequest.builder()
-						.id(applicationId)
+						.applicationId(applicationId)
 						.state(state)
 						.build();
 						
@@ -341,7 +367,7 @@ public class CfAppManager {
                 .memory(memoryQuota)
                 .diskQuota(diskQuota)
                 .spaceId(spaceId)
-                .id(applicationId)
+                .applicationId(applicationId)
                 .state(state)
                 .command(startCommand)
                 .environmentJsons(envJson);
@@ -376,7 +402,7 @@ public class CfAppManager {
     		return Mono.empty();
     	
     	DeleteRouteRequest request = DeleteRouteRequest.builder()
-                .id(routeId)
+                .routeId(routeId)
                 .build();
     	
     	return cloudFoundryClient.routes().delete(request)
@@ -426,17 +452,16 @@ public class CfAppManager {
                 .single();
     }
     
-    private static Mono<String> requesteAppSummary(CloudFoundryClient cloudFoundryClient, String applicationId) {
+    private static Mono<String> checkAppSummary(CloudFoundryClient cloudFoundryClient, String applicationId) {
     	 
 		SummaryApplicationRequest request = SummaryApplicationRequest.builder()
-		        .id(applicationId)
+		        .applicationId(applicationId)
 		        .build();
 		
        return cloudFoundryClient.applicationsV2().summary(request)
-    		   .log("stream.summaryApp")
+    		   .log("stream.checkAppSummary")
     		   .map(response -> response.getId());
     }
-
     
 
 }
