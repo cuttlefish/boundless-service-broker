@@ -1,8 +1,8 @@
 package org.boundless.cf.servicebroker.service.boundless;
 
 import org.apache.log4j.Logger;
-import org.boundless.cf.servicebroker.cfutils.CfAppManager;
-import org.boundless.cf.servicebroker.cfutils.CfAppManager;
+import org.boundless.cf.servicebroker.cfutils.CFAppManager;
+import org.boundless.cf.servicebroker.cfutils.CFAppManager;
 import org.boundless.cf.servicebroker.exception.ServiceBrokerException;
 import org.boundless.cf.servicebroker.exception.ServiceInstanceDoesNotExistException;
 import org.boundless.cf.servicebroker.exception.ServiceInstanceExistsException;
@@ -251,13 +251,13 @@ public class BoundlessServiceInstanceService implements ServiceInstanceService {
     		// instead of going with the service instance org/space guids.
       		String org = boundlessSIMetadata.getOrg();
     		if (org != null) {
-        		orgGuid = CfAppManager.requestOrganizationId(cfClient, org).get();
+        		orgGuid = CFAppManager.requestOrganizationId(cfClient, org).get();
         		boundlessSIMetadata.setOrgGuid(orgGuid);
     		}
     		
        		String space = boundlessSIMetadata.getSpace();
     		if (space != null) {
-    			spaceGuid = CfAppManager.requestSpaceId(cfClient, 
+    			spaceGuid = CFAppManager.requestSpaceId(cfClient, 
     					boundlessSIMetadata.getOrgGuid(), 
     					boundlessSIMetadata.getSpace()
     					).get();
@@ -265,7 +265,7 @@ public class BoundlessServiceInstanceService implements ServiceInstanceService {
     		}
     		
     		// Look up the domain Guid either based on provided domain name or very first available domain.
-    		String domainGuid = CfAppManager.requestDomainId(cfClient, 
+    		String domainGuid = CFAppManager.requestDomainId(cfClient, 
     				boundlessSIMetadata.getDomain()
     				).get();
     		boundlessSIMetadata.setDomainGuid(domainGuid);
@@ -273,7 +273,7 @@ public class BoundlessServiceInstanceService implements ServiceInstanceService {
     		// If we went with the default domain as no domain was specified,
     		// fill the domain name by requesting for domain details using the above returned domainId.
     		if (boundlessSIMetadata.getDomain() == null) {
-    			boundlessSIMetadata.setDomain(CfAppManager.requestDomainName(cfClient, domainGuid).get());
+    			boundlessSIMetadata.setDomain(CFAppManager.requestDomainName(cfClient, domainGuid).get());
     		}
     		
     		String[] resourceTypes = BoundlessAppResourceType.getTypes(); 
@@ -284,7 +284,7 @@ public class BoundlessServiceInstanceService implements ServiceInstanceService {
 		    	}
 		    	
 		    	// Need a get() on function call to really execute the logic in Reactive
-	    		Tuple2<String, String> resultPair = CfAppManager.push(cfClient, appMetadata).get(); 
+	    		Tuple2<String, String> resultPair = CFAppManager.push(cfClient, appMetadata).get(); 
 		    	if (resultPair != null) {
 		    		String appId = resultPair.t1;
 		    		String routeId = resultPair.t2;
@@ -318,7 +318,7 @@ public class BoundlessServiceInstanceService implements ServiceInstanceService {
 	    	AppMetadataDTO appMetadata = boundlessSIMetadata.generateAppMetadata(resourceType);
 	    	if (appMetadata != null && appMetadata.getInstances() > 0) {
 	    		// Need a get() on function call to really execute the logic in Reactive
-	    		CfAppManager.update(cfClient, appMetadata).get();
+	    		CFAppManager.update(cfClient, appMetadata).get();
 	    	}
     	}
     	
@@ -340,8 +340,8 @@ public class BoundlessServiceInstanceService implements ServiceInstanceService {
 	    		// We might not have the complete app or route guid filled in case of error during app push,
 	    		// Just clean up whatever is left over - do it separately for route & app
 	    		// Need a get() on function call to really execute the logic in Reactive
-	    		CfAppManager.deleteRoute(cfClient, appMetadata.getRouteGuid()).get();
-	    		CfAppManager.deleteApplications(cfClient, appMetadata.getSpaceGuid(), appMetadata.getName()).get();
+	    		CFAppManager.deleteRoute(cfClient, appMetadata.getRouteGuid()).get();
+	    		CFAppManager.deleteApplications(cfClient, appMetadata.getSpaceGuid(), appMetadata.getName()).get();
 	    	}
     	}
     	boundlessAppRepository.delete(boundlessSIMetadata);
