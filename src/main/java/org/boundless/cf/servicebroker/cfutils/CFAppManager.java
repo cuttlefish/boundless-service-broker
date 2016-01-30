@@ -49,10 +49,10 @@ import reactor.core.publisher.Mono;
 import reactor.fn.tuple.Tuple2;
 import reactor.rx.Stream;
 
-public class CfAppManager {
+public class CFAppManager {
 
-    private static final Logger log = Logger.getLogger(CfAppManager.class);
-    
+    private static final Logger log = Logger.getLogger(CFAppManager.class);
+
     public static Mono<String> requestDomainId(CloudFoundryClient cloudFoundryClient, String domain) {
     	if (domain != null) {
     	return Mono
