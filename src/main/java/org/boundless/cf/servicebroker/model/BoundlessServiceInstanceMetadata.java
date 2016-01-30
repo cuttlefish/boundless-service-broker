@@ -29,9 +29,9 @@ import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 
 /*
  * Holds information about the Boundless Apps running on CF
- * There are two types of Apps: geoserver & geocache, each with their own memory/disk/instances/command/docker image
+ * There are two types of Apps: geoserver & geowebcache, each with their own memory/disk/instances/command/docker image
  * They are represented by BoundlessAppResource
- * 
+ *
  */
 @Entity
 @Table(name = "boundless_serviceinstance_metadata")

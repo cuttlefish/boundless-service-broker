@@ -33,32 +33,32 @@ public class PlanConfig {
 	@Column(name="geoserver_docker_uri", nullable = true)
 	private String geoServerDockerUri;
 
-	@Column(name="geocache_docker_uri", nullable = true)
-	private String geoCacheDockerUri;
+	@Column(name="geowebcache_docker_uri", nullable = true)
+	private String geoWebCacheDockerUri;
 
 	@Column(name="geoserver_start_command", nullable = true)
 	private String geoServerStartCommand;
 
-	@Column(name="geocache_start_command", nullable = true)
-	private String geoCacheStartCommand;
+	@Column(name="geowebcache_start_command", nullable = true)
+	private String geoWebCacheStartCommand;
 
 	@Column(name="geoserver_disk", nullable = true)
 	private int geoServerDisk;
 
-	@Column(name="geocache_disk", nullable = true)
-	private int geoCacheDisk;
+	@Column(name="geowebcache_disk", nullable = true)
+	private int geoWebCacheDisk;
 
 	@Column(name="geoserver_memory", nullable = true)
 	private int geoServerMemory;
-	
-	@Column(name="geocache_memory", nullable = true)
-	private int geoCacheMemory;
+
+	@Column(name="geowebcache_memory", nullable = true)
+	private int geoWebCacheMemory;
 
 	@Column(name="geoserver_instance", nullable = true)
 	private int geoServerInstance;
 
-	@Column(name="geocache_instance", nullable = true)
-	private int geoCacheInstance;
+	@Column(name="geowebcache_instance", nullable = true)
+	private int geoWebCacheInstance;
 
 	// any "other" tags/key-value pairs    
 	@ElementCollection(fetch = FetchType.LAZY)
@@ -110,12 +110,12 @@ public class PlanConfig {
 		this.geoServerStartCommand = geoServerStartCommand;
 	}
 
-	public String getGeoCacheStartCommand() {
-		return geoCacheStartCommand;
+	public String getGeoWebCacheStartCommand() {
+		return geoWebCacheStartCommand;
 	}
 
-	public void setGeoCacheStartCommand(String geoCacheStartCommand) {
-		this.geoCacheStartCommand = geoCacheStartCommand;
+	public void setGeoWebCacheStartCommand(String geoWebCacheStartCommand) {
+		this.geoWebCacheStartCommand = geoWebCacheStartCommand;
 	}
 
 	public String getGeoServerDockerUri() {
@@ -126,12 +126,12 @@ public class PlanConfig {
 		this.geoServerDockerUri = geoserver_docker_uri;
 	}
 
-	public String getGeoCacheDockerUri() {
-		return geoCacheDockerUri;
+	public String getGeoWebCacheDockerUri() {
+		return geoWebCacheDockerUri;
 	}
 
-	public void setGeoCacheDockerUri(String geocache_docker_uri) {
-		this.geoCacheDockerUri = geocache_docker_uri;
+	public void setGeoWebCacheDockerUri(String geowebcache_docker_uri) {
+		this.geoWebCacheDockerUri = geowebcache_docker_uri;
 	}
 
 	public int getGeoServerDisk() {
@@ -142,12 +142,12 @@ public class PlanConfig {
 		this.geoServerDisk = geoserver_disk;
 	}
 
-	public int getGeoCacheDisk() {
-		return geoCacheDisk;
+	public int getGeoWebCacheDisk() {
+		return geoWebCacheDisk;
 	}
 
-	public void setGeoCacheDisk(int geocache_disk) {
-		this.geoCacheDisk = geocache_disk;
+	public void setGeoWebCacheDisk(int geowebcache_disk) {
+		this.geoWebCacheDisk = geowebcache_disk;
 	}
 
 	public int getGeoServerMemory() {
@@ -158,14 +158,14 @@ public class PlanConfig {
 		this.geoServerMemory = geoserver_memory;
 	}
 
-	public int getGeoCacheMemory() {
-		return geoCacheMemory;
+	public int getGeoWebCacheMemory() {
+		return geoWebCacheMemory;
 	}
 
-	public void setGeoCacheMemory(int geocache_memory) {
-		this.geoCacheMemory = geocache_memory;
+	public void setGeoWebCacheMemory(int geowebcache_memory) {
+		this.geoWebCacheMemory = geowebcache_memory;
 	}
-	
+
 	public int getGeoServerInstance() {
 		return geoServerInstance;
 	}
@@ -174,22 +174,22 @@ public class PlanConfig {
 		this.geoServerInstance = geoServerInstance;
 	}
 
-	public int getGeoCacheInstance() {
-		return geoCacheInstance;
+	public int getGeoWebCacheInstance() {
+		return geoWebCacheInstance;
 	}
 
-	public void setGeoCacheInstance(int geoCacheInstance) {
-		this.geoCacheInstance = geoCacheInstance;
+	public void setGeoWebCacheInstance(int geoWebCacheInstance) {
+		this.geoWebCacheInstance = geoWebCacheInstance;
 	}
 
 	@SuppressWarnings("unchecked")
 	public Object get(String key) {
 		switch(key) {
-			case "geocache_instances": return this.getGeoCacheInstance();
-			case "geocache_memory": return this.getGeoCacheMemory();
-			case "geocache_disk": return this.getGeoCacheDisk();
-			case "geocache_start_command": return this.getGeoCacheStartCommand();
-			case "geocache_docker_uri": return this.getGeoCacheDockerUri();
+			case "geowebcache_instances": return this.getGeoWebCacheInstance();
+			case "geowebcache_memory": return this.getGeoWebCacheMemory();
+			case "geowebcache_disk": return this.getGeoWebCacheDisk();
+			case "geowebcache_start_command": return this.getGeoWebCacheStartCommand();
+			case "geowebcache_docker_uri": return this.getGeoWebCacheDockerUri();
 			case "geoserver_instances": return this.getGeoServerInstance();
 			case "geoserver_memory": return this.getGeoServerMemory();
 			case "geoserver_disk": return this.getGeoServerDisk();
@@ -204,32 +204,32 @@ public class PlanConfig {
 	@Override
 	public String toString() {
 		return "AppConfig [id=" + id + ", geoServerDockerUri="
-				+ geoServerDockerUri + ", geoCacheDockerUri="
-				+ geoCacheDockerUri + ", geoServerDisk="
-				+ geoServerDisk + ", geoCacheDisk=" + geoCacheDisk
-				+ ", geoServerMemory=" + geoServerMemory + ", geoCacheMemory="
-				+ geoCacheMemory + ", geoServerInstance=" + geoServerInstance
-				+ ", geoCacheInstance=" + geoCacheInstance + ", otherAttribs="
+				+ geoServerDockerUri + ", geoWebCacheDockerUri="
+				+ geoWebCacheDockerUri + ", geoServerDisk="
+				+ geoServerDisk + ", geoWebCacheDisk=" + geoWebCacheDisk
+				+ ", geoServerMemory=" + geoServerMemory + ", geoWebCacheMemory="
+				+ geoWebCacheMemory + ", geoServerInstance=" + geoServerInstance
+				+ ", geoWebCacheInstance=" + geoWebCacheInstance + ", otherAttribs="
 				+ otherAttribs + "]";
 	}
 
 	public void update(PlanConfig planDetails) {
-		
-		this.geoCacheDockerUri = planDetails.getGeoCacheDockerUri();
+
+		this.geoWebCacheDockerUri = planDetails.getGeoWebCacheDockerUri();
 		this.geoServerDockerUri = planDetails.getGeoServerDockerUri();
-		
+
 		this.geoServerMemory = planDetails.geoServerMemory;
-		this.geoCacheMemory = planDetails.geoCacheMemory;
-		
+		this.geoWebCacheMemory = planDetails.geoWebCacheMemory;
+
 		this.geoServerInstance = planDetails.geoServerInstance;
-		this.geoCacheInstance = planDetails.geoCacheInstance;
-		
+		this.geoWebCacheInstance = planDetails.geoWebCacheInstance;
+
 		this.geoServerDisk = planDetails.geoServerDisk;
-		this.geoCacheDisk = planDetails.geoCacheDisk;
-		
+		this.geoWebCacheDisk = planDetails.geoWebCacheDisk;
+
 		this.geoServerInstance = planDetails.geoServerInstance;
-		this.geoCacheInstance = planDetails.geoCacheInstance;
-		
+		this.geoWebCacheInstance = planDetails.geoWebCacheInstance;
+
 		this.otherAttribs.clear();
 		
 		for(String key:planDetails.otherAttribs.keySet()) {

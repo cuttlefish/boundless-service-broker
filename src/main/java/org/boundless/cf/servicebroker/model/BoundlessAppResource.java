@@ -34,7 +34,7 @@ import com.google.gson.JsonSerializationContext;
 import com.google.gson.JsonSerializer;
 
 //Represents each type of application that would be pushed to CF as part of one single service instance creation
-// There can GeoServer, GeoCache and any other additional components..
+// There can GeoServer, GeoWebCache and any other additional components..
 @Entity
 @Table(name = "boundless_app_resource")
 @JsonIgnoreProperties({ "boundless_app_metadata" })
@@ -163,13 +163,13 @@ public class BoundlessAppResource {
 			this.setMemory(config.getGeoServerMemory());
 			this.setDisk(config.getGeoServerDisk());
 			this.setDockerImage(config.getGeoServerDockerUri());
-			break;		
-		case BoundlessAppResourceType.GEO_CACHE_TYPE:
-			this.setDockerImage(config.getGeoCacheDockerUri());
-			this.setInstances(config.getGeoCacheInstance());
-			this.setMemory(config.getGeoCacheMemory());
-			this.setDisk(config.getGeoCacheDisk());
-			this.setDockerImage(config.getGeoCacheDockerUri());
+			break;
+		case BoundlessAppResourceType.GEO_WEB_CACHE_TYPE:
+			this.setDockerImage(config.getGeoWebCacheDockerUri());
+			this.setInstances(config.getGeoWebCacheInstance());
+			this.setMemory(config.getGeoWebCacheMemory());
+			this.setDisk(config.getGeoWebCacheDisk());
+			this.setDockerImage(config.getGeoWebCacheDockerUri());
 		default:
 			break;
 		}
