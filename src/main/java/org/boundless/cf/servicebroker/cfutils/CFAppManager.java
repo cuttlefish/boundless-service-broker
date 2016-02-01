@@ -25,7 +25,7 @@ import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
 import org.apache.log4j.Logger;
-import org.boundless.cf.servicebroker.model.AppMetadataDTO;
+import org.boundless.cf.servicebroker.model.dto.AppMetadataDTO;
 import org.cloudfoundry.client.CloudFoundryClient;
 import org.cloudfoundry.client.v2.applications.CreateApplicationRequest;
 import org.cloudfoundry.client.v2.applications.CreateApplicationRequest.CreateApplicationRequestBuilder;
@@ -323,6 +323,7 @@ public class CFAppManager {
                 .instances(instances)
                 .memory(memoryQuota)
                 .diskQuota(diskQuota)
+                .environmentJsons(envJson)
                 .healthCheckTimeout(180);
     	
     	if (isDockerCredValid(dockerCredsJson)) {

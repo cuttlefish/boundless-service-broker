@@ -1,4 +1,4 @@
-package org.boundless.cf.servicebroker.model;
+package org.boundless.cf.servicebroker.model.dto;
 
 /**
  * A request sent by the cloud controller to remove a service.

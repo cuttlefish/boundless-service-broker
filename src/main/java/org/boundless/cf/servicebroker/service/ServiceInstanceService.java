@@ -6,10 +6,10 @@ import org.boundless.cf.servicebroker.exception.ServiceInstanceDoesNotExistExcep
 import org.boundless.cf.servicebroker.exception.ServiceInstanceExistsException;
 import org.boundless.cf.servicebroker.exception.ServiceInstanceUpdateNotSupportedException;
 import org.boundless.cf.servicebroker.model.BoundlessServiceInstance;
-import org.boundless.cf.servicebroker.model.CreateServiceInstanceRequest;
-import org.boundless.cf.servicebroker.model.DeleteServiceInstanceRequest;
 import org.boundless.cf.servicebroker.model.ServiceInstance;
-import org.boundless.cf.servicebroker.model.UpdateServiceInstanceRequest;
+import org.boundless.cf.servicebroker.model.dto.CreateServiceInstanceRequest;
+import org.boundless.cf.servicebroker.model.dto.DeleteServiceInstanceRequest;
+import org.boundless.cf.servicebroker.model.dto.UpdateServiceInstanceRequest;
 
 
 /**

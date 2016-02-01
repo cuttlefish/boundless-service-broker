@@ -36,6 +36,9 @@ public class CFClientUtility {
 			@Value("${cf.admin.password}") String cfPassword,
 			@Value("${cf.skipSslValidation:true}") Boolean skipSslValidation) {
 
+		if (cfTarget.startsWith("https")) {
+			cfTarget = cfTarget.substring(8);
+		}
 		
 		return SpringCloudFoundryClient.builder()
 				.host(cfTarget)

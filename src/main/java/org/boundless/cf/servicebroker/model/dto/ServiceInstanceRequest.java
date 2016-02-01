@@ -1,4 +1,4 @@
-package org.boundless.cf.servicebroker.model;
+package org.boundless.cf.servicebroker.model.dto;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 

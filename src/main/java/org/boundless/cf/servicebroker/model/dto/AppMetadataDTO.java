@@ -1,4 +1,4 @@
-package org.boundless.cf.servicebroker.model;
+package org.boundless.cf.servicebroker.model.dto;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -59,7 +59,7 @@ public class AppMetadataDTO {
 	@JsonSerialize
 	@JsonProperty("uri")
 	private String uri;
-	
+		
 	@JsonSerialize
 	@JsonProperty("route_id")
 	private String routeGuid;

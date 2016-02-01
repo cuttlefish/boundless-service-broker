@@ -7,17 +7,18 @@ import org.boundless.cf.servicebroker.exception.ServiceBrokerException;
 import org.boundless.cf.servicebroker.exception.ServiceInstanceDoesNotExistException;
 import org.boundless.cf.servicebroker.exception.ServiceInstanceExistsException;
 import org.boundless.cf.servicebroker.exception.ServiceInstanceUpdateNotSupportedException;
-import org.boundless.cf.servicebroker.model.AppMetadataDTO;
-import org.boundless.cf.servicebroker.model.BoundlessAppResourceType;
+import org.boundless.cf.servicebroker.model.BoundlessAppResource;
+import org.boundless.cf.servicebroker.model.BoundlessAppResourceConstants;
 import org.boundless.cf.servicebroker.model.BoundlessServiceInstance;
 import org.boundless.cf.servicebroker.model.BoundlessServiceInstanceMetadata;
-import org.boundless.cf.servicebroker.model.CreateServiceInstanceRequest;
-import org.boundless.cf.servicebroker.model.DeleteServiceInstanceRequest;
 import org.boundless.cf.servicebroker.model.OperationState;
 import org.boundless.cf.servicebroker.model.ServiceDefinition;
 import org.boundless.cf.servicebroker.model.ServiceInstance;
 import org.boundless.cf.servicebroker.model.ServiceInstanceLastOperation;
-import org.boundless.cf.servicebroker.model.UpdateServiceInstanceRequest;
+import org.boundless.cf.servicebroker.model.dto.AppMetadataDTO;
+import org.boundless.cf.servicebroker.model.dto.CreateServiceInstanceRequest;
+import org.boundless.cf.servicebroker.model.dto.DeleteServiceInstanceRequest;
+import org.boundless.cf.servicebroker.model.dto.UpdateServiceInstanceRequest;
 import org.boundless.cf.servicebroker.repository.BoundlessAppMetadataRepository;
 import org.boundless.cf.servicebroker.repository.BoundlessServiceInstanceMetadataRepository;
 import org.boundless.cf.servicebroker.repository.BoundlessServiceInstanceRepository;
@@ -233,12 +234,37 @@ public class BoundlessServiceInstanceService implements ServiceInstanceService {
 		return serviceInstanceRepository.save(instance);
 	}	
 	
+	/*
+	 *  Update the GWC instance env variable 'GEOSERVER_HOST' with pointer to GeoServer route
+	 *  
+	 */
+	private void updateEnvVariablesForInstance(BoundlessServiceInstance serviceInstance) {
+		BoundlessServiceInstanceMetadata boundlessSIMetadata = serviceInstance.getMetadata();
+		BoundlessAppResource geoWebCacheAppResource = boundlessSIMetadata.getResource(BoundlessAppResourceConstants.GWC_TYPE);
+		BoundlessAppResource geoServerAppResource = boundlessSIMetadata.getResource(BoundlessAppResourceConstants.GEOSERVER_TYPE);
+		
+		// Add user & passwords
+		geoServerAppResource.addToEnvironment(BoundlessAppResourceConstants.GEOSERVER_ADMIN_ID, geoServerAppResource.getUser());
+		geoServerAppResource.addToEnvironment(BoundlessAppResourceConstants.GEOSERVER_ADMIN_PASSWD, geoServerAppResource.getPassword());	
+				
+		geoWebCacheAppResource.addToEnvironment(BoundlessAppResourceConstants.GWC_ADMIN_ID, geoWebCacheAppResource.getUser());
+		geoWebCacheAppResource.addToEnvironment(BoundlessAppResourceConstants.GWC_ADMIN_PASSWD, geoWebCacheAppResource.getPassword());
+		
+		geoWebCacheAppResource.addToEnvironment(BoundlessAppResourceConstants.GEOSERVER_ADMIN_ID, geoServerAppResource.getUser());
+		geoWebCacheAppResource.addToEnvironment(BoundlessAppResourceConstants.GEOSERVER_ADMIN_PASSWD, geoServerAppResource.getPassword());	
+		
+		// Update the GWC instance env variable 'GEOSERVER_HOST' with pointer to GeoServer route
+		String geoServerUrl = "https://" + geoServerAppResource.getRoute() + "." + boundlessSIMetadata.getDomain(); 
+		geoWebCacheAppResource.addToEnvironment(BoundlessAppResourceConstants.GEOSERVER_HOST, geoServerUrl);
+				
+	}
+	
 	public void createApp(BoundlessServiceInstance serviceInstance) throws ServiceBrokerException {
 		
 		BoundlessServiceInstanceMetadata boundlessSIMetadata = serviceInstance.getMetadata();
-		
 		if (boundlessSIMetadata == null)
 			return;
+		
     	log.debug("Boundless App Metadata at create: " + boundlessSIMetadata);
     	
     	try {
@@ -249,14 +275,14 @@ public class BoundlessServiceInstanceService implements ServiceInstanceService {
     		// If the user has provided explicitly their own org & spaces to create the apps
     		// then lookup for the associated guids and go with those.
     		// instead of going with the service instance org/space guids.
-      		String org = boundlessSIMetadata.getOrg();
-    		if (org != null) {
+      		if (boundlessSIMetadata.isTargetOrgDefined()) {
+      			String org = boundlessSIMetadata.getOrg();
         		orgGuid = CFAppManager.requestOrganizationId(cfClient, org).get();
         		boundlessSIMetadata.setOrgGuid(orgGuid);
     		}
     		
-       		String space = boundlessSIMetadata.getSpace();
-    		if (space != null) {
+       		if (boundlessSIMetadata.isTargetSpaceDefined()) {
+       			String space = boundlessSIMetadata.getSpace();
     			spaceGuid = CFAppManager.requestSpaceId(cfClient, 
     					boundlessSIMetadata.getOrgGuid(), 
     					boundlessSIMetadata.getSpace()
@@ -270,13 +296,13 @@ public class BoundlessServiceInstanceService implements ServiceInstanceService {
     				).get();
     		boundlessSIMetadata.setDomainGuid(domainGuid);
     		
-    		// If we went with the default domain as no domain was specified,
-    		// fill the domain name by requesting for domain details using the above returned domainId.
-    		if (boundlessSIMetadata.getDomain() == null) {
-    			boundlessSIMetadata.setDomain(CFAppManager.requestDomainName(cfClient, domainGuid).get());
-    		}
+    		// Whether we went with the specified domain or default domain,
+    		// fill the domain name by requesting for domain details using the previously obtained domainId.
+    		boundlessSIMetadata.setDomain(CFAppManager.requestDomainName(cfClient, domainGuid).get());
     		
-    		String[] resourceTypes = BoundlessAppResourceType.getTypes(); 
+    		updateEnvVariablesForInstance(serviceInstance);
+
+    		String[] resourceTypes = BoundlessAppResourceConstants.getTypes(); 
 	    	for(String resourceType: resourceTypes) {
 		    	AppMetadataDTO appMetadata = boundlessSIMetadata.generateAppMetadata(resourceType);
 		    	if (appMetadata == null || appMetadata.getInstances() == 0) {
@@ -313,7 +339,7 @@ public class BoundlessServiceInstanceService implements ServiceInstanceService {
 			return;
 		
      	log.debug("Boundless App Metadata at update: " + boundlessSIMetadata);
-    	String[] resourceTypes = BoundlessAppResourceType.getTypes(); 
+    	String[] resourceTypes = BoundlessAppResourceConstants.getTypes(); 
     	for(String resourceType: resourceTypes) {
 	    	AppMetadataDTO appMetadata = boundlessSIMetadata.generateAppMetadata(resourceType);
 	    	if (appMetadata != null && appMetadata.getInstances() > 0) {
@@ -333,7 +359,7 @@ public class BoundlessServiceInstanceService implements ServiceInstanceService {
 		if (boundlessSIMetadata == null)
 			return;
 		
-		String[] resourceTypes = BoundlessAppResourceType.getTypes(); 
+		String[] resourceTypes = BoundlessAppResourceConstants.getTypes(); 
     	for(String resourceType: resourceTypes) {
 	    	AppMetadataDTO appMetadata = boundlessSIMetadata.generateAppMetadata(resourceType);
 	    	if (appMetadata != null && appMetadata.getInstances() > 0) {

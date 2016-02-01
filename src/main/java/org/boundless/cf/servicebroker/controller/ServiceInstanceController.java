@@ -9,13 +9,13 @@ import org.boundless.cf.servicebroker.exception.ServiceDefinitionDoesNotExistExc
 import org.boundless.cf.servicebroker.exception.ServiceInstanceDoesNotExistException;
 import org.boundless.cf.servicebroker.exception.ServiceInstanceExistsException;
 import org.boundless.cf.servicebroker.exception.ServiceInstanceUpdateNotSupportedException;
-import org.boundless.cf.servicebroker.model.CreateServiceInstanceRequest;
-import org.boundless.cf.servicebroker.model.DeleteServiceInstanceRequest;
 import org.boundless.cf.servicebroker.model.ErrorMessage;
 import org.boundless.cf.servicebroker.model.ServiceDefinition;
 import org.boundless.cf.servicebroker.model.ServiceInstance;
 import org.boundless.cf.servicebroker.model.ServiceInstanceLastOperation;
-import org.boundless.cf.servicebroker.model.UpdateServiceInstanceRequest;
+import org.boundless.cf.servicebroker.model.dto.CreateServiceInstanceRequest;
+import org.boundless.cf.servicebroker.model.dto.DeleteServiceInstanceRequest;
+import org.boundless.cf.servicebroker.model.dto.UpdateServiceInstanceRequest;
 import org.boundless.cf.servicebroker.service.CatalogService;
 import org.boundless.cf.servicebroker.service.ServiceInstanceService;
 import org.springframework.beans.factory.annotation.Autowired;

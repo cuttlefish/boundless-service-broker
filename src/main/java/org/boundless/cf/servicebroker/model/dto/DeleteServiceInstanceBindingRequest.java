@@ -1,4 +1,6 @@
-package org.boundless.cf.servicebroker.model;
+package org.boundless.cf.servicebroker.model.dto;
+
+import org.boundless.cf.servicebroker.model.ServiceInstance;
 
 /**
  *  A request sent by the cloud controller to remove a binding

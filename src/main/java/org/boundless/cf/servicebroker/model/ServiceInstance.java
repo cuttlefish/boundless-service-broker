@@ -17,6 +17,9 @@ import javax.persistence.Table;
 import javax.persistence.Transient;
 
 import org.apache.log4j.Logger;
+import org.boundless.cf.servicebroker.model.dto.CreateServiceInstanceRequest;
+import org.boundless.cf.servicebroker.model.dto.DeleteServiceInstanceRequest;
+import org.boundless.cf.servicebroker.model.dto.UpdateServiceInstanceRequest;
 
 import com.fasterxml.jackson.annotation.JsonAutoDetect;
 import com.fasterxml.jackson.annotation.JsonIgnore;

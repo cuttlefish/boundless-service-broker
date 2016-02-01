@@ -1,4 +1,4 @@
-package org.boundless.cf.servicebroker.model;
+package org.boundless.cf.servicebroker.model.dto;
 
 import java.util.Map;
 import java.util.Objects;

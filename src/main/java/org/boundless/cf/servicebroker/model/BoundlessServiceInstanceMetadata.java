@@ -19,6 +19,7 @@ import javax.persistence.OneToMany;
 import javax.persistence.Table;
 
 import org.apache.log4j.Logger;
+import org.boundless.cf.servicebroker.model.dto.AppMetadataDTO;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
 import org.json.simple.parser.ParseException;
@@ -127,7 +128,7 @@ public class BoundlessServiceInstanceMetadata {
 
 	public synchronized Set<BoundlessAppResource> getAppResources() {		
 		if (appResources.size() == 0) {
-			for(String type: BoundlessAppResourceType.getTypes()) {
+			for(String type: BoundlessAppResourceConstants.getTypes()) {
 				BoundlessAppResource resource = new BoundlessAppResource(type);
 				appResources.add(resource);
 				resource.setBoundlessAppMetadata(this);
@@ -232,33 +233,39 @@ public class BoundlessServiceInstanceMetadata {
 		if (appMetadataMap == null || appMetadataMap.size() == 0)
 			return;
 		
-		
+		HashMap<String, String> newEnvMap = new HashMap<String, String>();
 		for(String key: appMetadataMap.keySet()) {
 			Object val = appMetadataMap.get(key);
 			if (val == null)
 				continue;
 			
 			boolean paramHandled = false;
-			
 			switch(key) {
 			case "org": this.setOrg(val.toString()); break;
 			case "domain": this.setDomain(val.toString()); break;
 			case "space": this.setSpace(val.toString()); break;
 			default:
-				for (String type : BoundlessAppResourceType.getTypes()) {
-					if (BoundlessAppResourceType.isOfType(key, type)) {
-						setResourceMapping(type, key, val);
-						paramHandled = true;
+				for (String type : BoundlessAppResourceConstants.getTypes()) {
+					if (BoundlessAppResourceConstants.isOfType(key, type)) {
+						paramHandled = setResourceMapping(type, key, val);
+						if (paramHandled);
 						break;
 					}
 				}
-				if (!paramHandled) 
-					log.info("Could not map parameter: " + key + " with value: " + val);
+				if (!paramHandled) {
+					log.info("Could not map parameter: " + key + " with value: " + val + ", adding to env variables");
+					newEnvMap.put(key, (val == null? null : val.toString()));
+				}
 			}
+		}
+		
+		// For all new/unknown parameters, add them into environment variables for both resources.
+		for (BoundlessAppResource resource : this.getAppResources()) { 
+			resource.getEnvironmentJsons().putAll(newEnvMap);
 		}
 	}
 
-	public void setResourceMapping(String type, String key, Object val) {
+	public boolean setResourceMapping(String type, String key, Object val) {
 		int index = type.length() + 1;
 		String modKey = key.substring(index);
 		
@@ -270,19 +277,36 @@ public class BoundlessServiceInstanceMetadata {
 		}
 		
 		switch(modKey.toLowerCase()) {
-			case "name": resource.setAppName(val.toString()); break;
+			case "name": 
+				resource.setAppName(val.toString()); 
+				break;
 			case "route": 
 			case "uri" : 
-				resource.setRoute(val.toString()); break;
-			case "instances": resource.setInstances(Integer.parseInt(val.toString())); break;
-			case "memory": resource.setMemory(Integer.parseInt(val.toString())); break;
-			case "disk": resource.setDisk(Integer.parseInt(val.toString())); break;
-			case "docker_image": resource.setDockerImage(val.toString()); break;
-		    case "docker_cred": resource.setDockerCred((HashMap<String, String>) val); break;
-			case "environment": resource.setEnvironmentJsons( (Map<String,String>) val); break;
+				resource.setRoute(val.toString()); 
+				break;
+			case "instances": 
+				resource.setInstances(Integer.parseInt(val.toString())); 
+				break;
+			case "memory": 
+				resource.setMemory(Integer.parseInt(val.toString())); 
+				break;
+			case "disk": 
+				resource.setDisk(Integer.parseInt(val.toString())); 
+				break;
+			case "docker_image": 
+				resource.setDockerImage(val.toString()); 
+				break;
+		    case "docker_cred": 
+		    	resource.setDockerCred((HashMap<String, String>) val); 
+		    	break;
+			case "environment": 
+				resource.setEnvironmentJsons( (Map<String,String>) val); 
+				break;
 			default:
 				log.info("Could not map app parameter: " + key + " with value: " + val);
+				return false;
 		}
+		return true;
 	}
 
 	public void updateResourceDefns(Map<String, Object> appMetadataMap) {
@@ -294,8 +318,8 @@ public class BoundlessServiceInstanceMetadata {
 			if (val == null)
 				continue;
 
-			for (String type : BoundlessAppResourceType.getTypes()) {
-				if (BoundlessAppResourceType.isOfType(key, type)) {
+			for (String type : BoundlessAppResourceConstants.getTypes()) {
+				if (BoundlessAppResourceConstants.isOfType(key, type)) {
 					updateResourceMapping(type, key, val);
 				}
 			}
@@ -317,10 +341,18 @@ public class BoundlessServiceInstanceMetadata {
 		
 		// We will only allow override of the memory, disk, instances or env variables
 		switch(modKey.toLowerCase()) {
-			case "instances": resource.setInstances(Integer.parseInt(val.toString())); break;
-			case "memory": resource.setMemory(Integer.parseInt(val.toString())); break;
-			case "disk": resource.setDisk(Integer.parseInt(val.toString())); break;
-			case "environment": resource.setEnvironmentJsons( (Map<String,String>) val); break;
+			case "instances": 
+				resource.setInstances(Integer.parseInt(val.toString())); 
+				break;
+			case "memory": 
+				resource.setMemory(Integer.parseInt(val.toString())); 
+				break;
+			case "disk": 
+				resource.setDisk(Integer.parseInt(val.toString())); 
+				break;
+			case "environment": 
+				resource.setEnvironmentJsons( (Map<String,String>) val); 
+				break;
 			default:
 				log.debug("Ignoring update of app parameter: " + key + " with value: " + val);
 		}
@@ -393,7 +425,13 @@ public class BoundlessServiceInstanceMetadata {
 		return;
 	}
 	
-
+	public boolean isTargetSpaceDefined() {
+		return this.space != null;
+	}
+	
+	public boolean isTargetOrgDefined() {
+		return this.org != null;
+	}
 
 	@Override
 	public String toString() {

@@ -16,7 +16,10 @@ import javax.persistence.ManyToOne;
 import javax.persistence.MapKeyColumn;
 import javax.persistence.Table;
 
+import org.apache.commons.lang.RandomStringUtils;
+import org.apache.commons.lang.math.RandomUtils;
 import org.apache.log4j.Logger;
+import org.boundless.cf.servicebroker.model.dto.AppMetadataDTO;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
 import org.json.simple.parser.ParseException;
@@ -67,6 +70,16 @@ public class BoundlessAppResource {
 	@JsonProperty("app_id")
 	@Column(nullable = true)
 	private String appGuid;
+	
+	@JsonSerialize
+	@JsonProperty("user")
+	@Column(nullable = false)
+	private String user = "admin";
+
+	@JsonSerialize
+	@JsonProperty("password")
+	@Column(nullable = false)
+	private String password = getRandomPassword();
 	
 	@JsonSerialize
 	@JsonProperty("route")
@@ -122,7 +135,7 @@ public class BoundlessAppResource {
 	@MapKeyColumn(name="name")
     @Column(name="value")
     @CollectionTable(name="environmentJsons", joinColumns=@JoinColumn(name="environmentJsons_id"))
-	private Map<String,String> environmentJsons;
+	private Map<String,String> environmentJsons = new HashMap<String,String>();
 	
 	public BoundlessAppResource() { 
 		generateAndSetId();
@@ -157,14 +170,14 @@ public class BoundlessAppResource {
 	
 	public void loadDefaults(PlanConfig config) {
 		switch(this.type) {		
-		case BoundlessAppResourceType.GEO_SERVER_TYPE:
+		case BoundlessAppResourceConstants.GEOSERVER_TYPE:
 			this.setDockerImage(config.getGeoServerDockerUri());
 			this.setInstances(config.getGeoServerInstance());
 			this.setMemory(config.getGeoServerMemory());
 			this.setDisk(config.getGeoServerDisk());
 			this.setDockerImage(config.getGeoServerDockerUri());
 			break;		
-		case BoundlessAppResourceType.GEO_CACHE_TYPE:
+		case BoundlessAppResourceConstants.GWC_TYPE:
 			this.setDockerImage(config.getGeoCacheDockerUri());
 			this.setInstances(config.getGeoCacheInstance());
 			this.setMemory(config.getGeoCacheMemory());
@@ -223,6 +236,22 @@ public class BoundlessAppResource {
 
 	public void setRouteGuid(String routeGuid) {
 		this.routeGuid = routeGuid;
+	}
+
+	public String getUser() {
+		return user;
+	}
+
+	public void setUser(String user) {
+		this.user = user;
+	}
+
+	public String getPassword() {
+		return password;
+	}
+
+	public void setPassword(String password) {
+		this.password = password;
 	}
 
 	public String getDockerImage() {
@@ -319,6 +348,13 @@ public class BoundlessAppResource {
 		this.boundlessServiceInstanceMetadata = boundlessAppMetadata;
 	}
 
+	public String getRandomPassword() {
+	    StringBuffer password = new StringBuffer(20);
+	    int next = RandomUtils.nextInt(13) + 8;
+	    password.append(RandomStringUtils.randomAlphanumeric(next));
+	    return password.toString();
+	}
+	
 	@Override
 	public int hashCode() {
 		final int prime = 31;
@@ -452,6 +488,11 @@ public class BoundlessAppResource {
 		HashMap<String, Object> targetMap = new HashMap<String, Object>();
 		for(String key: srcMap.keySet()) {
 			String val = srcMap.get(key);
+			if (val == null)  {
+				targetMap.put(key, val);
+				continue;
+			}
+			
 			Object nativeVal = val;
 			try {
 				nativeVal = Double.valueOf(val);

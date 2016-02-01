@@ -6,13 +6,13 @@ import java.util.Map;
 import org.apache.log4j.Logger;
 import org.boundless.cf.servicebroker.exception.ServiceBrokerException;
 import org.boundless.cf.servicebroker.exception.ServiceInstanceBindingExistsException;
-import org.boundless.cf.servicebroker.model.AppMetadataDTO;
-import org.boundless.cf.servicebroker.model.BoundlessAppResourceType;
+import org.boundless.cf.servicebroker.model.BoundlessAppResourceConstants;
 import org.boundless.cf.servicebroker.model.BoundlessServiceInstanceMetadata;
 import org.boundless.cf.servicebroker.model.BoundlessServiceInstance;
-import org.boundless.cf.servicebroker.model.CreateServiceInstanceBindingRequest;
-import org.boundless.cf.servicebroker.model.DeleteServiceInstanceBindingRequest;
 import org.boundless.cf.servicebroker.model.ServiceInstanceBinding;
+import org.boundless.cf.servicebroker.model.dto.AppMetadataDTO;
+import org.boundless.cf.servicebroker.model.dto.CreateServiceInstanceBindingRequest;
+import org.boundless.cf.servicebroker.model.dto.DeleteServiceInstanceBindingRequest;
 import org.boundless.cf.servicebroker.repository.ServiceInstanceBindingRepository;
 import org.boundless.cf.servicebroker.service.ServiceInstanceBindingService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -71,7 +71,7 @@ public class BoundlessServiceInstanceBindingService implements
     	credMap.put("org", boundlessAppMetadata.getOrg());
 		credMap.put("space", boundlessAppMetadata.getSpace());
 		
-		String[] resourceTypes = BoundlessAppResourceType.getTypes(); 
+		String[] resourceTypes = BoundlessAppResourceConstants.getTypes(); 
     	for(String resourceType: resourceTypes) {
 	    	AppMetadataDTO appMetadata = boundlessAppMetadata.generateAppMetadata(resourceType);
 	    	if (appMetadata != null) {
@@ -79,8 +79,8 @@ public class BoundlessServiceInstanceBindingService implements
     			credMap.put(resourceType + "_guid", appMetadata.getAppGuid());
     			credMap.put(resourceType + "_uri", 
     							"https://" + appMetadata.getRoute() 
-    							+ "/" + boundlessAppMetadata.getDomain() 
-    							+ (resourceType.equals("geoserver")? "/geoserver/index.html":""));	    			
+    							+ "." + boundlessAppMetadata.getDomain() 
+    							+ (resourceType.equals("geoserver")? "/geoserver/index.html":"/geowebcache/home"));	    			
     			credMap.put(resourceType + "_docker_image", appMetadata.getDockerImage());
     		}
     	}

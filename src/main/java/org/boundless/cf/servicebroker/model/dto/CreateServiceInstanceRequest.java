@@ -1,9 +1,11 @@
-package org.boundless.cf.servicebroker.model;
+package org.boundless.cf.servicebroker.model.dto;
 
 import java.util.Map;
 import java.util.Objects;
 
 import org.apache.commons.beanutils.BeanUtils;
+import org.boundless.cf.servicebroker.model.Plan;
+import org.boundless.cf.servicebroker.model.ServiceDefinition;
 import org.hibernate.validator.constraints.NotEmpty;
 
 import com.fasterxml.jackson.annotation.JsonAutoDetect;

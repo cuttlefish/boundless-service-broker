@@ -9,6 +9,9 @@ import javax.persistence.Inheritance;
 import javax.persistence.InheritanceType;
 import javax.persistence.OneToOne;
 
+import org.boundless.cf.servicebroker.model.dto.CreateServiceInstanceRequest;
+import org.boundless.cf.servicebroker.model.dto.UpdateServiceInstanceRequest;
+
 import com.fasterxml.jackson.annotation.JsonAutoDetect;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
