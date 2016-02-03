@@ -70,18 +70,24 @@ public class BoundlessServiceInstanceBindingService implements
 		
     	credMap.put("org", boundlessAppMetadata.getOrg());
 		credMap.put("space", boundlessAppMetadata.getSpace());
-		
 		String[] resourceTypes = BoundlessAppResourceConstants.getTypes(); 
     	for(String resourceType: resourceTypes) {
 	    	AppMetadataDTO appMetadata = boundlessAppMetadata.generateAppMetadata(resourceType);
 	    	if (appMetadata != null) {
     			credMap.put(resourceType + "_name", appMetadata.getName());
     			credMap.put(resourceType + "_guid", appMetadata.getAppGuid());
+    			
     			credMap.put(resourceType + "_uri", 
     							"https://" + appMetadata.getRoute() 
     							+ "." + boundlessAppMetadata.getDomain() 
-    							+ (resourceType.equals("geoserver")? "/geoserver/index.html":"/geowebcache/home"));	    			
+    							+ (resourceType.equals(BoundlessAppResourceConstants.GEOSERVER_TYPE)? "/geoserver/index.html":"/geowebcache/home"));	    			
     			credMap.put(resourceType + "_docker_image", appMetadata.getDockerImage());
+    			
+    			String adminIdKey = BoundlessAppResourceConstants.getAdminIdToken(resourceType);
+    			String adminPasswordKey = BoundlessAppResourceConstants.getAdminPasswordToken(resourceType);
+    			
+    			credMap.put(adminIdKey, "" + appMetadata.getEnvironmentJsons().get(adminIdKey));
+    			credMap.put(adminPasswordKey, "" + appMetadata.getEnvironmentJsons().get(adminPasswordKey));
     		}
     	}
 		

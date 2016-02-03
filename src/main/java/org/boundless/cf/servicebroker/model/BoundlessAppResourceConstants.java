@@ -22,4 +22,18 @@ public class BoundlessAppResourceConstants {
 	public static boolean isOfType(String key, String type) {
 		return key.startsWith(type);
 	}
+	
+	public static String getAdminIdToken(String type) {
+		if (type.equals(GEOSERVER_TYPE))
+			return GEOSERVER_ADMIN_ID;
+		else 
+			return GWC_ADMIN_ID;
+	}
+	
+	public static String getAdminPasswordToken(String type) {
+		if (type.equals(GEOSERVER_TYPE))
+			return GEOSERVER_ADMIN_PASSWD;
+		else 
+			return GWC_ADMIN_PASSWD;
+	}
 };

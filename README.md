@@ -4,12 +4,19 @@ This is an implementation of [Cloud Foundry Service Broker] (https://docs.cloudf
 
 Steps
 * Build the service broker jar file using mvn clean install (use jdk 1.8)
+```
+# Ignore running maven test as it would require bosh-lite to run local tests for cf-java-client
+mvn -Dmaven.test.skip=true clean install && cf push
+```
+
 * Create mysql-service (of type : mysql) in the org/space where the Service Broker would be deployed
 ```
 cf create-service p-mysql 100mb-dev mysql-service
 ```
 * Edit the manifest.yml with correct credentials to CF.
 * Deploy the service broker jar file using the manifest.yml and `cf push`
+```
+```
 * Register service broker on CF
 ```
 # The below code uses default testuser:testuser as username & password for authentication based on manifest.yml entries
@@ -51,7 +58,6 @@ cf apps
 * Note: On update to service broker code, update the broker against CF to pick changes to service or plans
 ```
 # Rebuild the service broker jar file & push to cf
-mvn install && cf push
-# Run update service broker if there are change in plan/service offerings
+mvn -Dmaven.test.skip=true clean install && cf push
 cf update-service-broker boundless-service-broker testuser testuser https://boundless-service-broker.<domain>
 ```

@@ -2,8 +2,8 @@ insert into servicemetadata(id, provider_display_name, display_name, image_url) 
 insert into services (name, id, description, bindable, metadata_id) values ('OpenGeo', '58A0E4B0-DFC2-4CD8-827B-94F6E49EA7BC', 'OpenGeo Server Basic Profile', true, 1);
 
 -- memory & disk are in mb
-insert into planconfigs (id, geoserver_docker_uri, geocache_docker_uri, geoserver_memory, geoserver_disk, geoserver_instance, geocache_memory, geocache_disk, geocache_instance) values ('planconfigs1', 'jhankes/centos-gs', null, 1536, 1536, 1, 1536, 1536, 1);
-insert into planconfigs (id, geoserver_docker_uri, geocache_docker_uri, geoserver_memory, geoserver_disk, geoserver_instance, geocache_memory, geocache_disk, geocache_instance)                                   values ('planconfigs2', 'jhankes/centos-gs', null, 4096, 8192, 4, 2048, 8192, 2);
+insert into planconfigs (id, geoserver_docker_uri, geocache_docker_uri, geoserver_memory, geoserver_disk, geoserver_instance, geocache_memory, geocache_disk, geocache_instance) values ('planconfigs1', 'cuttlefish/geoserver:4.8', 'cuttlefish/gwc:4.8', 1536, 1536, 1, 1536, 1536, 1);
+insert into planconfigs (id, geoserver_docker_uri, geocache_docker_uri, geoserver_memory, geoserver_disk, geoserver_instance, geocache_memory, geocache_disk, geocache_instance)                                   values ('planconfigs2', 'cuttlefish/geoserver:4.8', 'cuttlefish/gwc:4.8', 4096, 8192, 4, 2048, 8192, 2);
 
 insert into planconfig_other_attributes (planconfig_other_attrib_id, name, value) values ('planconfigs1', 'someAttributeA', 'someValue1');
 insert into planconfig_other_attributes (planconfig_other_attrib_id, name, value) values ('planconfigs1', 'testMemory', '4');
