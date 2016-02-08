@@ -47,6 +47,7 @@ import org.reactivestreams.Publisher;
 
 import reactor.core.publisher.Mono;
 import reactor.fn.tuple.Tuple2;
+import reactor.rx.Promise;
 import reactor.rx.Stream;
 
 public class CFAppManager {
@@ -54,19 +55,21 @@ public class CFAppManager {
     private static final Logger log = Logger.getLogger(CFAppManager.class);
 
     public static Mono<String> requestDomainId(CloudFoundryClient cloudFoundryClient, String domain) {
+    	/*
     	if (domain != null) {
     	return Mono
                 .just(domain)
                 .then(domain2 -> requestDomain(cloudFoundryClient, domain2))
                 .as(Stream::from)                                               
                 .switchIfEmpty(requestFirstDomain(cloudFoundryClient))
+                .log("stream.swithcIfEmptyOnDomain")
                 .single()                                                       
                 .map(resource -> resource.getMetadata().getId());
     	} 
-    	
+    	*/
     	return
     		requestFirstDomain(cloudFoundryClient)
-   		 	.map(resource -> resource.getMetadata().getId());
+    		.map(resource -> resource.getMetadata().getId());
     }
     
     public static Mono<String> requestDomainName(CloudFoundryClient cloudFoundryClient, String domainId) {
@@ -89,6 +92,17 @@ public class CFAppManager {
                 .as(Stream::from)
                 .single()
                 .map(resource -> resource.getMetadata().getId());
+     
+        /*
+        return cloudFoundryClient.organizations().list(request)
+			        .then(response -> Stream
+			                .fromIterable(response.getResources())
+			                .single())
+			        .map(resource -> resource.getMetadata().getId())
+			        .log("stream.prePromise")
+			        .to(Promise.prepare())
+			        .log("stream.postPromise");
+		*/
     }
     
     public static Mono<String> requestSpaceId(CloudFoundryClient cloudFoundryClient, String organizationId, String space) {
@@ -407,7 +421,8 @@ public class CFAppManager {
                 .build();
     	
     	return cloudFoundryClient.routes().delete(request)
-                .log("stream.DeleteRoute");	
+                .log("stream.DeleteRoute")
+                .after();	
     }
 
     private static Mono<DomainResource> requestDomain(CloudFoundryClient cloudFoundryClient, String domain) {
@@ -417,6 +432,7 @@ public class CFAppManager {
         
         return cloudFoundryClient.domains().list(request)
                 .flatMap(response -> Stream.fromIterable(response.getResources()))
+                .log("stream.requestDomain")
                 .as(Stream::from)
                 .singleOrEmpty();
         
@@ -441,7 +457,9 @@ public class CFAppManager {
                 .build();
 
         return cloudFoundryClient.domains().list(request)
-                .flatMap(response -> Stream.fromIterable(response.getResources()))
+        		.as(Stream::from)
+    			.flatMap(resource -> Stream.fromIterable(resource.getResources()))
+                .log("stream.requestFirstDomain")
                 .next();
     }
 

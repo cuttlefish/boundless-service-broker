@@ -16,8 +16,10 @@
 
 package org.boundless.cf.servicebroker.cfutils;
 
+import org.apache.log4j.Logger;
 import org.cloudfoundry.client.CloudFoundryClient;
 import org.cloudfoundry.client.spring.SpringCloudFoundryClient;
+import org.cloudfoundry.client.v2.domains.ListDomainsRequest;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.context.annotation.Bean;
@@ -28,6 +30,8 @@ import org.springframework.context.annotation.Lazy;
 @EnableAutoConfiguration
 @Lazy
 public class CFClientUtility {
+
+    private static final Logger log = Logger.getLogger(CFClientUtility.class);
 
     @Bean
 	SpringCloudFoundryClient cloudFoundryClient(
@@ -40,12 +44,16 @@ public class CFClientUtility {
 			cfTarget = cfTarget.substring(8);
 		}
 		
-		return SpringCloudFoundryClient.builder()
+		SpringCloudFoundryClient cfClient = SpringCloudFoundryClient.builder()
 				.host(cfTarget)
 				.username(cfUsername)
 				.password(cfPassword)
 				.skipSslValidation(skipSslValidation)
 				.build();
+		
+		log.info("SUCCESS!! Created CF client and got domains: " 
+				+ cfClient.domains().list(ListDomainsRequest.builder().build()).get());
+		return cfClient;
 	}
 
 }

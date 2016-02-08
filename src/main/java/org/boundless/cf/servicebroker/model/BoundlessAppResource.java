@@ -3,6 +3,7 @@ package org.boundless.cf.servicebroker.model;
 import java.lang.reflect.Type;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Random;
 import java.util.UUID;
 
 import javax.persistence.CollectionTable;
@@ -168,23 +169,30 @@ public class BoundlessAppResource {
 		return id;
 	}
 	
-	public void loadDefaults(PlanConfig config) {
+	public void loadDefaults(String randomId, Plan plan) {
+		// Generate some default name for app & route as backup
+		PlanConfig config = plan.getPlanConfig();
+		
 		switch(this.type) {		
-		case BoundlessAppResourceConstants.GEOSERVER_TYPE:
-			this.setDockerImage(config.getGeoServerDockerUri());
-			this.setInstances(config.getGeoServerInstance());
-			this.setMemory(config.getGeoServerMemory());
-			this.setDisk(config.getGeoServerDisk());
-			this.setDockerImage(config.getGeoServerDockerUri());
-			break;		
-		case BoundlessAppResourceConstants.GWC_TYPE:
-			this.setDockerImage(config.getGeoCacheDockerUri());
-			this.setInstances(config.getGeoCacheInstance());
-			this.setMemory(config.getGeoCacheMemory());
-			this.setDisk(config.getGeoCacheDisk());
-			this.setDockerImage(config.getGeoCacheDockerUri());
-		default:
-			break;
+			case BoundlessAppResourceConstants.GEOSERVER_TYPE:
+				this.setDockerImage(config.getGeoServerDockerUri());
+				this.setInstances(config.getGeoServerInstance());
+				this.setMemory(config.getGeoServerMemory());
+				this.setDisk(config.getGeoServerDisk());
+				this.setDockerImage(config.getGeoServerDockerUri());
+				this.setAppName("geoserver-" + randomId);
+				this.setRoute("geoserver-" + randomId);
+				break;		
+			case BoundlessAppResourceConstants.GWC_TYPE:
+				this.setDockerImage(config.getGeoCacheDockerUri());
+				this.setInstances(config.getGeoCacheInstance());
+				this.setMemory(config.getGeoCacheMemory());
+				this.setDisk(config.getGeoCacheDisk());
+				this.setDockerImage(config.getGeoCacheDockerUri());
+				this.setAppName("gwc-" + randomId);
+				this.setRoute("gwc-" + randomId);
+			default:
+				break;
 		}
 	}
 

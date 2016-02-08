@@ -1,8 +1,5 @@
 {
   
-  "org": "boundless",
-  "space":"boundless-dev",
-  "domain": "pcfaas-slot8.pez.pivotal.io",
   "geoserver_docker_cred": { "key" : "test" }, 
   "geoserver_name":"boundless-server",
   "geoserver_route": "boundless-server",

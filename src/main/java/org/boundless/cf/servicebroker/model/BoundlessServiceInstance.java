@@ -1,6 +1,7 @@
 package org.boundless.cf.servicebroker.model;
 
 import java.util.Map;
+import java.util.Random;
 
 import javax.persistence.CascadeType;
 import javax.persistence.Entity;
@@ -41,16 +42,22 @@ public class BoundlessServiceInstance extends ServiceInstance {
 		log.debug("Service Instance created: " + this);
 	}
 
+	public int generateRandom() {
+		return (new Random()).nextInt(1000);
+	}
+	
 	public void initMetadata(CreateServiceInstanceRequest request) {
-		PlanConfig planConfig = request.getPlan().getPlanConfig();
+		Plan plan = request.getPlan();
 		if (this.boundlessSIMetadata == null) {
 			this.boundlessSIMetadata = new BoundlessServiceInstanceMetadata();
 			boundlessSIMetadata.generateAndSetId();
 		}
 		
+		String randomId = plan.getName() + "-" + generateRandom();
+		
 		// Pull the plan provided options (memory/instances/docker images) and load it as default
 		for(BoundlessAppResource resource: this.boundlessSIMetadata.getAppResources()) {
-			resource.loadDefaults(planConfig);
+			resource.loadDefaults(randomId, plan);
 		}
 		
 		// If user has provided some overrides, use that on top
