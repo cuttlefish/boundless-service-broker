@@ -3,6 +3,7 @@ package org.boundless.cf.servicebroker.model;
 import java.util.HashMap;
 import java.util.Map;
 
+import org.apache.log4j.Logger;
 import org.hibernate.validator.constraints.NotEmpty;
 
 import com.fasterxml.jackson.annotation.JsonAutoDetect;
@@ -22,7 +23,7 @@ import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class ServiceInstanceBindingResponse {
 
-	ServiceInstanceBinding binding;
+	private ServiceInstanceBinding binding;
 	
 	public ServiceInstanceBindingResponse() {}
 	
@@ -49,6 +50,10 @@ public class ServiceInstanceBindingResponse {
 		for(String key: srcMap.keySet()) {
 			String val = srcMap.get(key);
 			Object nativeVal = val;
+			if (val == null) {
+				continue;
+			}
+			
 			try {
 				nativeVal = Double.valueOf(val);
 				Double double1 = (Double)nativeVal;
