@@ -2,7 +2,6 @@ package org.boundless.cf.servicebroker.service.boundless;
 
 import org.apache.log4j.Logger;
 import org.boundless.cf.servicebroker.cfutils.CFAppManager;
-import org.boundless.cf.servicebroker.cfutils.CFAppManager;
 import org.boundless.cf.servicebroker.exception.ServiceBrokerException;
 import org.boundless.cf.servicebroker.exception.ServiceInstanceDoesNotExistException;
 import org.boundless.cf.servicebroker.exception.ServiceInstanceExistsException;
@@ -26,10 +25,10 @@ import org.boundless.cf.servicebroker.repository.PlanRepository;
 import org.boundless.cf.servicebroker.service.CatalogService;
 import org.boundless.cf.servicebroker.service.ServiceInstanceService;
 import org.cloudfoundry.client.CloudFoundryClient;
-import org.cloudfoundry.client.v2.applications.SummaryApplicationResponse;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import reactor.core.publisher.Mono;
 import reactor.fn.tuple.Tuple2;
 
 @Service
@@ -37,6 +36,10 @@ public class BoundlessServiceInstanceService implements ServiceInstanceService {
 
 	private static final Logger log = Logger
 			.getLogger(BoundlessServiceInstanceService.class);
+	
+	public static final String GWC_SERVICE_PROVIDER = "p-riakcs";
+	public static final String GWC_SERVICE_PREFIX = "riakcs-";
+
 
 	@Autowired
 	CatalogService catalogService;
@@ -258,6 +261,50 @@ public class BoundlessServiceInstanceService implements ServiceInstanceService {
 				
 	}
 	
+	/*
+	 * Create and Bind to S3 Object store type service for GWC instances
+	 * In our case, it would be Riak-cs
+	 */
+	private String createAndBindToGWCService(String serviceProvider, String serviceName, String spaceGuid, String appId) {
+		
+		Mono<String> serviceId = null;
+		Mono<String> servicePlanId = null;
+		Mono<String> serviceInstanceId = null;
+		Mono<String> serviceBindInstanceId = null;
+		try {
+			serviceId = CFAppManager.requestServiceId(cfClient, serviceProvider);
+			servicePlanId = CFAppManager.requestServicePlanId(cfClient, serviceId);
+
+			serviceInstanceId = CFAppManager.requestCreateServiceInstance( cfClient, serviceName, spaceGuid, servicePlanId);
+			serviceBindInstanceId = CFAppManager.requestCreateServiceBinding( cfClient, appId, serviceInstanceId);
+			
+			// Need a get() on function call to really execute the logic in Reactive
+			return serviceBindInstanceId.get();
+		
+		} catch(Exception e) {
+			// In case of any errors, clean up the instance created earlier.
+			if (serviceInstanceId != null) {
+				CFAppManager.requestDeleteServiceInstance(cfClient, serviceInstanceId.get());
+			}
+			return null;
+		}
+	}
+	
+	/*
+	 * Unbind and delete service from GWC instances
+	 * 
+	 */
+	private void unbindAndDeleteGWCService(String serviceBindInstanceId) {
+		
+		String serviceInstanceId = CFAppManager.requestGetServiceInstanceFromBinding(cfClient, serviceBindInstanceId).get();
+		CFAppManager.requestDeleteServiceBinding(cfClient, serviceBindInstanceId).get();
+		
+		if (serviceInstanceId != null) {			
+			CFAppManager.requestDeleteServiceInstance(cfClient, serviceInstanceId).get();
+		}
+	}
+
+	
 	public void createApp(BoundlessServiceInstance serviceInstance) throws ServiceBrokerException {
 		
 		BoundlessServiceInstanceMetadata boundlessSIMetadata = serviceInstance.getMetadata();
@@ -309,12 +356,19 @@ public class BoundlessServiceInstanceService implements ServiceInstanceService {
 		    	}
 		    	
 		    	// Need a get() on function call to really execute the logic in Reactive
+		    	BoundlessAppResource resource = boundlessSIMetadata.getResource(resourceType);
+		    	
 	    		Tuple2<String, String> resultPair = CFAppManager.push(cfClient, appMetadata).get(); 
 		    	if (resultPair != null) {
 		    		String appId = resultPair.t1;
 		    		String routeId = resultPair.t2;
-			    	boundlessSIMetadata.getResource(resourceType).setAppGuid(appId);
-		    		boundlessSIMetadata.getResource(resourceType).setRouteGuid(routeId);
+		    		resource.setAppGuid(appId);
+		    		resource.setRouteGuid(routeId);
+		    		
+		    		if (BoundlessAppResourceConstants.isOfType(resourceType, BoundlessAppResourceConstants.GWC_TYPE)) {
+		    			String serviceBindingId = createAndBindToGWCService(GWC_SERVICE_PROVIDER, GWC_SERVICE_PREFIX + appMetadata.getName(), spaceGuid, appId);
+		    			resource.addToServiceBindings(serviceBindingId);
+		    		}
 		    	}
 	    	}
     	} catch(Exception e) {
@@ -360,13 +414,23 @@ public class BoundlessServiceInstanceService implements ServiceInstanceService {
 		
 		String[] resourceTypes = BoundlessAppResourceConstants.getTypes(); 
     	for(String resourceType: resourceTypes) {
-	    	AppMetadataDTO appMetadata = boundlessSIMetadata.generateAppMetadata(resourceType);
-	    	if (appMetadata != null && appMetadata.getInstances() > 0) {
+	    	
+    		BoundlessAppResource resource = boundlessSIMetadata.getResource(resourceType);
+    		
+    		// Unbind and delete any associated service instances
+			String serviceBindingIds = resource.getServiceBindings();
+			if (serviceBindingIds != null && !serviceBindingIds.equals("")) {
+				for(String serviceBindInstanceId : serviceBindingIds.split(",")) {
+					unbindAndDeleteGWCService(serviceBindInstanceId.trim());
+				}
+			}
+
+    		if (resource != null && resource.getInstances() > 0) {
 	    		// We might not have the complete app or route guid filled in case of error during app push,
 	    		// Just clean up whatever is left over - do it separately for route & app
 	    		// Need a get() on function call to really execute the logic in Reactive
-	    		CFAppManager.deleteRoute(cfClient, appMetadata.getRouteGuid()).get();
-	    		CFAppManager.deleteApplications(cfClient, appMetadata.getSpaceGuid(), appMetadata.getName()).get();
+	    		CFAppManager.deleteRoute(cfClient, resource.getRouteGuid()).get();
+	    		CFAppManager.deleteApplications(cfClient, boundlessSIMetadata.getSpaceGuid(), resource.getAppName()).get();	    		
 	    	}
     	}
     	boundlessAppRepository.delete(boundlessSIMetadata);

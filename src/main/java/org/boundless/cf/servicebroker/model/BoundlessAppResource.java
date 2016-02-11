@@ -118,6 +118,27 @@ public class BoundlessAppResource {
 	private String startCommand;
 	
 	@JsonSerialize
+	@JsonProperty("service_bindings")
+	@Column(nullable = true)
+	private String serviceBindings;
+	
+	public String getServiceBindings() {
+		return serviceBindings;
+	}
+
+	public void setServiceBindings(String serviceBindings) {
+		this.serviceBindings = serviceBindings;
+	}
+
+	public synchronized void addToServiceBindings(String serviceBindingId) {
+		if (serviceBindings == null) {
+			serviceBindings = serviceBindingId;
+		} else {
+			serviceBindings += ", " +serviceBindingId; 
+		} 
+	}
+	
+	@JsonSerialize
 	@JsonProperty("state")
 	@Column(nullable = true)	
 	private String state;
@@ -458,6 +479,7 @@ public class BoundlessAppResource {
 		appMetadata.setDockerCred(this.getDockerCred());
 		appMetadata.setEnvironmentJsons(convertToObjectMap(this.getEnvironmentJsons()));
 		appMetadata.setRoute(this.getRoute());
+		appMetadata.setServiceBindings(this.serviceBindings);
 		
 		// If no route is provided, just go with the app name
 		if (appMetadata.getRoute() == null)
@@ -483,13 +505,12 @@ public class BoundlessAppResource {
 
 	@Override
 	public String toString() {
-		return "BoundlessAppResource [appName=" + appName + ", type=" + type
-				+ ", appGuid=" + appGuid + ", route=" + route + ", routeGuid="
-				+ routeGuid + ", dockerImage=" + dockerImage + ", memory="
-				+ memory + ", disk=" + disk + ", instances=" + instances
-				+ ", startCommand=" + startCommand + ", state=" + state
-				+ ", dockerCred=" + dockerCred + ", environmentJsons="
-				+ environmentJsons + ", serviceInstanceMetadataId=" + this.boundlessServiceInstanceMetadata.getId() + "]";
+		return "BoundlessAppResource [id=" + id + ", appName=" + appName + ", type=" + type + ", appGuid=" + appGuid
+				+ ", user=" + user + ", password=" + password + ", route=" + route + ", routeGuid=" + routeGuid
+				+ ", dockerImage=" + dockerImage + ", memory=" + memory + ", disk=" + disk + ", instances=" + instances
+				+ ", startCommand=" + startCommand + ", serviceBindings=" + serviceBindings + ", state=" + state
+				+ ", dockerCred=" + dockerCred + ", environmentJsons=" + environmentJsons 
+				+ ", serviceInstanceMetadataId=" + this.boundlessServiceInstanceMetadata.getId() + "]";
 	}
 
 	private static Map<String, Object> convertToObjectMap(Map<String, String> srcMap) {

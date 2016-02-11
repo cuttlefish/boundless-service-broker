@@ -89,6 +89,10 @@ public class AppMetadataDTO {
 	private String state;
 	
 	@JsonSerialize
+	@JsonProperty("services")	
+	private String serviceBindings;
+	
+	@JsonSerialize
 	@JsonProperty("dockerCred")
 	protected Map<String,String> dockerCred = new HashMap<String,String>();
 	
@@ -112,6 +116,7 @@ public class AppMetadataDTO {
 			case "instances": this.setInstances(Integer.parseInt(val.toString())); break;
 			case "memory": this.setMemory(Integer.parseInt(val.toString())); break;
 			case "disk": this.setDisk(Integer.parseInt(val.toString())); break;
+			case "serviceBindings": this.setServiceBindings(val.toString()); break;
 			case "docker_image": this.setDockerImage(val.toString()); break;
 		default:
 			log.info("Could not map parameter: " + key + " with value: " + val);
@@ -176,6 +181,14 @@ public class AppMetadataDTO {
 
 	public void setRouteGuid(String routeGuid) {
 		this.routeGuid = routeGuid;
+	}
+
+	public String getServiceBindings() {
+		return serviceBindings;
+	}
+
+	public void setServiceBindings(String serviceBindings) {
+		this.serviceBindings = serviceBindings;
 	}
 
 	@SuppressWarnings("unchecked")
@@ -329,15 +342,12 @@ public class AppMetadataDTO {
 	
 	@Override
 	public String toString() {
-		return "AppMetadata [org=" + org + ", space=" + space + ", orgGuid="
-				+ orgGuid + ", spaceGuid=" + spaceGuid + ", domain=" + domain
-				+ ", domainGuid=" + domainGuid + ", appGuid=" + appGuid
-				+ ", type=" + type + ", name=" + name + ", uri=" + uri
-				+ ", routeGuid=" + routeGuid + ", dockerImage=" + dockerImage
-				+ ", memory=" + memory + ", disk=" + disk + ", instances="
-				+ instances + ", startCommand=" + startCommand + ", state="
-				+ state + ", dockerCred=" + dockerCred
-				+ ", environmentJsons=" + environmentJsons + "]";
+		return "AppMetadataDTO [org=" + org + ", space=" + space + ", orgGuid=" + orgGuid + ", spaceGuid=" + spaceGuid
+				+ ", domain=" + domain + ", domainGuid=" + domainGuid + ", appGuid=" + appGuid + ", type=" + type
+				+ ", name=" + name + ", uri=" + uri + ", routeGuid=" + routeGuid + ", dockerImage=" + dockerImage
+				+ ", memory=" + memory + ", disk=" + disk + ", instances=" + instances + ", startCommand="
+				+ startCommand + ", state=" + state + ", serviceBindings=" + serviceBindings + ", dockerCred="
+				+ dockerCred + ", environmentJsons=" + environmentJsons + "]";
 	}
 	
 	@SuppressWarnings("unchecked")

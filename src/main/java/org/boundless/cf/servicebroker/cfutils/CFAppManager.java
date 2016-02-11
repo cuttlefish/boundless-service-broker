@@ -42,12 +42,21 @@ import org.cloudfoundry.client.v2.routes.AssociateRouteApplicationRequest;
 import org.cloudfoundry.client.v2.routes.CreateRouteRequest;
 import org.cloudfoundry.client.v2.routes.DeleteRouteRequest;
 import org.cloudfoundry.client.v2.routes.ListRoutesRequest;
+import org.cloudfoundry.client.v2.servicebindings.CreateServiceBindingRequest;
+import org.cloudfoundry.client.v2.servicebindings.DeleteServiceBindingRequest;
+import org.cloudfoundry.client.v2.servicebindings.GetServiceBindingRequest;
+import org.cloudfoundry.client.v2.serviceinstances.CreateServiceInstanceRequest;
+import org.cloudfoundry.client.v2.serviceinstances.DeleteServiceInstanceRequest;
+import org.cloudfoundry.client.v2.serviceinstances.ServiceInstanceEntity;
+import org.cloudfoundry.client.v2.serviceplans.ListServicePlansRequest;
+import org.cloudfoundry.client.v2.services.GetServiceRequest;
+import org.cloudfoundry.client.v2.services.GetServiceResponse;
+import org.cloudfoundry.client.v2.services.ListServicesRequest;
 import org.cloudfoundry.client.v2.spaces.ListSpacesRequest;
 import org.reactivestreams.Publisher;
 
 import reactor.core.publisher.Mono;
 import reactor.fn.tuple.Tuple2;
-import reactor.rx.Promise;
 import reactor.rx.Stream;
 
 public class CFAppManager {
@@ -481,6 +490,117 @@ public class CFAppManager {
     		   .log("stream.checkAppSummary")
     		   .map(response -> response.getId());
     }
+    
+    public static Mono<Void> requestDeleteServiceBinding(CloudFoundryClient cloudFoundryClient, String serviceBindingId) {
+		return cloudFoundryClient.serviceBindings()
+					.delete(
+							DeleteServiceBindingRequest.builder()
+							.serviceBindingId(serviceBindingId)
+							.build())
+					.log("stream.requestDeleteServiceBinding")
+					.after();
+	}
+    
+    public static Mono<String> requestCreateServiceBinding(CloudFoundryClient cloudFoundryClient, String appId, Mono<String> serviceInstanceId) {
+		return serviceInstanceId
+				.then(
+						serviceInstanceId1  -> cloudFoundryClient.serviceBindings()
+							.create(
+									CreateServiceBindingRequest.builder()
+									.applicationId(appId)
+									.serviceInstanceId(serviceInstanceId1)
+									.build())
+							.map(resource -> resource.getMetadata().getId())
+							.log("stream.requestCreateServiceBinding")
+				);
+	}
+    
+    public static Mono<String> requestGetServiceInstanceFromBinding(CloudFoundryClient cloudFoundryClient, String serviceBindingId) {
+		return cloudFoundryClient.serviceBindings()
+					.get(
+							GetServiceBindingRequest.builder()
+							.serviceBindingId(serviceBindingId)
+							.build())
+					.map(resource -> resource.getEntity().getServiceInstanceId())
+					.log("stream.requestGetServiceInstanceFromBinding");
+	}
+	
+	private static Mono<ServiceInstanceEntity> requestCreateServiceInstanceEntity(CloudFoundryClient cloudFoundryClient, String serviceName, String spaceId, Mono<String> servicePlanId) {
+		return servicePlanId
+				.then( 
+						servicePlanId1  ->
+							 cloudFoundryClient.serviceInstances()						
+								.create( CreateServiceInstanceRequest.builder()
+										.name(serviceName)
+										.servicePlanId(servicePlanId1)
+										.spaceId(spaceId)
+										.build())
+								.map(resource -> resource.getEntity())
+								.log("stream.requestCreateServiceInstanceEntity")
+				);
+	}
+	
+	public static Mono<Void> requestDeleteServiceInstance(CloudFoundryClient cloudFoundryClient, String serviceInstanceId) {
+			return  
+				cloudFoundryClient.serviceInstances()
+					.delete( DeleteServiceInstanceRequest.builder()
+						.serviceInstanceId(serviceInstanceId)
+						.build())
+					.log("stream.requestDeleteServiceInstance")
+					.after();
+	}
+	
+	public static Mono<String> requestCreateServiceInstance(CloudFoundryClient cloudFoundryClient, String serviceName, String spaceId, Mono<String> servicePlanId) {
+		return servicePlanId
+				.then(servicePlanId1 ->				   					
+					 cloudFoundryClient.serviceInstances()
+							.create( CreateServiceInstanceRequest.builder()
+								.name(serviceName)
+								.servicePlanId(servicePlanId1)
+								.spaceId(spaceId)
+								.build())
+							.map(resource -> resource.getMetadata().getId())
+							.log("stream.requestCreateServiceInstance")
+				);
+	}
+	
+	public static Mono<String> requestServicePlanId(CloudFoundryClient cloudFoundryClient, Mono<String> serviceId) {
+		return serviceId
+				.then( serviceIdString ->					
+						cloudFoundryClient.servicePlans()
+							.list( ListServicePlansRequest.builder()
+								.serviceId(serviceIdString)
+								.build())
+							.as(Stream::from)
+							.log("stream.requestServicePlanId")
+							.flatMap(resource -> Stream.fromIterable(resource.getResources()))
+							.next()
+							.map(resource -> resource.getMetadata().getId())
+				);			
+	}
+	
+	private static Mono<GetServiceResponse> requestService(CloudFoundryClient cloudFoundryClient, Mono<String> serviceId) {
+		return serviceId
+				.then( serviceIdString ->					
+						cloudFoundryClient.services()
+							.get( GetServiceRequest.builder()
+								.serviceId(serviceIdString)
+								.build())
+				);			
+	}
+	
+	public static Mono<String> requestServiceId(CloudFoundryClient cloudFoundryClient, String serviceLabel) {
+		return cloudFoundryClient.services()
+					.list( ListServicesRequest.builder()
+						.label(serviceLabel)	
+						.build())
+					.log("stream.requestServiceIdList")	
+					.as(Stream::from)
+					.log("stream.requestServiceIdStream")	
+					.flatMap(resource -> Stream.fromIterable(resource.getResources()))
+					.next()
+					.map(resource -> resource.getMetadata().getId());			
+	}
     
 
 }
