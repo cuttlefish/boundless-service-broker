@@ -69,7 +69,15 @@ public class BoundlessServiceInstanceBindingService implements
 		Map<String, String> credMap = new HashMap<String, String>();
 		
     	credMap.put("org", boundlessAppMetadata.getOrg());
-		credMap.put("space", boundlessAppMetadata.getSpace());
+		credMap.put("space", boundlessAppMetadata.getSpace());		
+		
+		Map<String, Object> additionalParamMap = request.getParameters();
+		if (additionalParamMap != null) {
+			for(String key: additionalParamMap.keySet()) {
+				credMap.put(key, "" + additionalParamMap.get(key));
+			}
+		}
+		
 		String[] resourceTypes = BoundlessAppResourceConstants.getTypes(); 
     	for(String resourceType: resourceTypes) {
 	    	AppMetadataDTO appMetadata = boundlessAppMetadata.generateAppMetadata(resourceType);
