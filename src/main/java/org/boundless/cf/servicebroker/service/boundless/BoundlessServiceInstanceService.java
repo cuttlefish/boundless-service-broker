@@ -26,6 +26,7 @@ import org.boundless.cf.servicebroker.service.CatalogService;
 import org.boundless.cf.servicebroker.service.ServiceInstanceService;
 import org.cloudfoundry.client.CloudFoundryClient;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import reactor.core.publisher.Mono;
@@ -41,6 +42,12 @@ public class BoundlessServiceInstanceService implements ServiceInstanceService {
 	public static final String GWC_SERVICE_PREFIX = "riakcs-";
 
 
+	@Value("${consul.host}")
+    private String consulHost;
+	
+	@Value("${consul.port}")
+    private int consulPort;
+	
 	@Autowired
 	CatalogService catalogService;
 
@@ -58,6 +65,22 @@ public class BoundlessServiceInstanceService implements ServiceInstanceService {
 	
 	@Autowired
 	CloudFoundryClient cfClient;
+
+	public String getConsulHost() {
+		return consulHost;
+	}
+
+	public void setConsulHost(String consulHost) {
+		this.consulHost = consulHost;
+	}
+
+	public int getConsulPort() {
+		return consulPort;
+	}
+
+	public void setConsulPort(int consulPort) {
+		this.consulPort = consulPort;
+	}
 
 	@Override
 	public ServiceInstance getServiceInstance(String id) {
@@ -245,6 +268,11 @@ public class BoundlessServiceInstanceService implements ServiceInstanceService {
 		BoundlessAppResource geoWebCacheAppResource = boundlessSIMetadata.getResource(BoundlessAppResourceConstants.GWC_TYPE);
 		BoundlessAppResource geoServerAppResource = boundlessSIMetadata.getResource(BoundlessAppResourceConstants.GEOSERVER_TYPE);
 		
+		geoServerAppResource.addToEnvironment(BoundlessAppResourceConstants.CONSUL_HOST, this.getConsulHost());
+		geoServerAppResource.addToEnvironment(BoundlessAppResourceConstants.CONSUL_PORT, this.getConsulPort());
+		geoWebCacheAppResource.addToEnvironment(BoundlessAppResourceConstants.CONSUL_HOST, this.getConsulHost());
+		geoWebCacheAppResource.addToEnvironment(BoundlessAppResourceConstants.CONSUL_PORT, this.getConsulPort());
+		
 		// Add user & passwords
 		geoServerAppResource.addToEnvironment(BoundlessAppResourceConstants.GEOSERVER_ADMIN_ID, geoServerAppResource.getUser());
 		geoServerAppResource.addToEnvironment(BoundlessAppResourceConstants.GEOSERVER_ADMIN_PASSWD, geoServerAppResource.getPassword());	
@@ -258,7 +286,6 @@ public class BoundlessServiceInstanceService implements ServiceInstanceService {
 		// Update the GWC instance env variable 'GEOSERVER_HOST' with pointer to GeoServer route
 		String geoServerUrl = "https://" + geoServerAppResource.getRoute() + "." + boundlessSIMetadata.getDomain(); 
 		geoWebCacheAppResource.addToEnvironment(BoundlessAppResourceConstants.GEOSERVER_HOST, geoServerUrl);
-				
 	}
 	
 	/*

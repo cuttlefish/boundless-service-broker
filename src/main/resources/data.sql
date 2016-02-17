@@ -3,7 +3,7 @@ insert into services (name, id, description, bindable, metadata_id) values ('Ope
 
 -- memory & disk are in mb
 insert into planconfigs (id, geoserver_docker_uri, geocache_docker_uri, geoserver_memory, geoserver_disk, geoserver_instance, geocache_memory, geocache_disk, geocache_instance) values ('planconfigs1', 'cuttlefish/geoserver:4.8', 'cuttlefish/gwc:4.8', 1536, 1536, 1, 1536, 1536, 1);
-insert into planconfigs (id, geoserver_docker_uri, geocache_docker_uri, geoserver_memory, geoserver_disk, geoserver_instance, geocache_memory, geocache_disk, geocache_instance)                                   values ('planconfigs2', 'cuttlefish/geoserver:4.8', 'cuttlefish/gwc:4.8', 4096, 8192, 4, 2048, 8192, 2);
+insert into planconfigs (id, geoserver_docker_uri, geocache_docker_uri, geoserver_memory, geoserver_disk, geoserver_instance, geocache_memory, geocache_disk, geocache_instance)                                   values ('planconfigs2', 'cuttlefish/geoserver:4.8', 'cuttlefish/gwc:4.8', 4096, 2048, 4, 4096, 2048, 2);
 
 insert into planconfig_other_attributes (planconfig_other_attrib_id, name, value) values ('planconfigs1', 'someAttributeA', 'someValue1');
 insert into planconfig_other_attributes (planconfig_other_attrib_id, name, value) values ('planconfigs1', 'testMemory', '4');

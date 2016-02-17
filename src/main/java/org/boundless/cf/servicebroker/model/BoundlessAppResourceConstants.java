@@ -13,6 +13,9 @@ public class BoundlessAppResourceConstants {
 	public static final String GWC_TYPE = "geocache";
 	public static final String GEOSERVER_TYPE = "geoserver";
 
+	public static final String CONSUL_HOST = "CONSUL_HOST";
+	public static final String CONSUL_PORT = "CONSUL_PORT";
+	
 	private static final String[] BOUNDLESS_APP_RESOURCE_TYPES = { GEOSERVER_TYPE, GWC_TYPE };
 
 	public static String[] getTypes() {
