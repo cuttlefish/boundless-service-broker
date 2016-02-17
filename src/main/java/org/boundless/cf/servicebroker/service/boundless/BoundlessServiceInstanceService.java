@@ -273,6 +273,11 @@ public class BoundlessServiceInstanceService implements ServiceInstanceService {
 		geoWebCacheAppResource.addToEnvironment(BoundlessAppResourceConstants.CONSUL_HOST, this.getConsulHost());
 		geoWebCacheAppResource.addToEnvironment(BoundlessAppResourceConstants.CONSUL_PORT, this.getConsulPort());
 		
+		// Add Service Instance name
+		String serviceInstanceGuid = serviceInstance.getId();
+		geoWebCacheAppResource.addToEnvironment(BoundlessAppResourceConstants.SERVICE_INSTANCE_NAME, serviceInstanceGuid);
+		geoServerAppResource.addToEnvironment(BoundlessAppResourceConstants.SERVICE_INSTANCE_NAME, serviceInstanceGuid);
+		
 		// Add user & passwords
 		geoServerAppResource.addToEnvironment(BoundlessAppResourceConstants.GEOSERVER_ADMIN_ID, geoServerAppResource.getUser());
 		geoServerAppResource.addToEnvironment(BoundlessAppResourceConstants.GEOSERVER_ADMIN_PASSWD, geoServerAppResource.getPassword());	
@@ -287,6 +292,23 @@ public class BoundlessServiceInstanceService implements ServiceInstanceService {
 		String geoServerUrl = "https://" + geoServerAppResource.getRoute() + "." + boundlessSIMetadata.getDomain(); 
 		geoWebCacheAppResource.addToEnvironment(BoundlessAppResourceConstants.GEOSERVER_HOST, geoServerUrl);
 	}
+	
+	/*
+	 * Override app and routes based on service instance name
+	 * Following wont work as the service instance is yet to be created and so wont be able to lookup service name
+	 *
+	private void overrideAppAndRoutes(BoundlessServiceInstance serviceInstance) {
+		BoundlessServiceInstanceMetadata boundlessSIMetadata = serviceInstance.getMetadata();
+		BoundlessAppResource geoWebCacheAppResource = boundlessSIMetadata.getResource(BoundlessAppResourceConstants.GWC_TYPE);
+		BoundlessAppResource geoServerAppResource = boundlessSIMetadata.getResource(BoundlessAppResourceConstants.GEOSERVER_TYPE);
+
+		String serviceInstanceName = boundlessSIMetadata.getServiceInstanceName();
+		geoServerAppResource.setAppName(BoundlessAppResourceConstants.GEOSERVER_TYPE + "-" + serviceInstanceName);
+		geoServerAppResource.setRoute(BoundlessAppResourceConstants.GEOSERVER_TYPE + "-" + serviceInstanceName);
+		geoWebCacheAppResource.setAppName(BoundlessAppResourceConstants.GWC_TYPE + "-" + serviceInstanceName);
+		geoWebCacheAppResource.setRoute(BoundlessAppResourceConstants.GWC_TYPE + "-" + serviceInstanceName);
+	}
+	*/
 	
 	/*
 	 * Create and Bind to S3 Object store type service for GWC instances
@@ -368,11 +390,12 @@ public class BoundlessServiceInstanceService implements ServiceInstanceService {
     				boundlessSIMetadata.getDomain()
     				).get();
     		boundlessSIMetadata.setDomainGuid(domainGuid);
-    		
+
     		// Whether we went with the specified domain or default domain,
     		// fill the domain name by requesting for domain details using the previously obtained domainId.
     		boundlessSIMetadata.setDomain(CFAppManager.requestDomainName(cfClient, domainGuid).get());
-    		
+   		
+    		// Update Env variables for app instances
     		updateEnvVariablesForInstance(serviceInstance);
 
     		String[] resourceTypes = BoundlessAppResourceConstants.getTypes(); 

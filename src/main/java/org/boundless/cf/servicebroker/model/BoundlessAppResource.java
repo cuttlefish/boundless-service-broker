@@ -201,8 +201,8 @@ public class BoundlessAppResource {
 				this.setMemory(config.getGeoServerMemory());
 				this.setDisk(config.getGeoServerDisk());
 				this.setDockerImage(config.getGeoServerDockerUri());
-				this.setAppName("geoserver-" + randomId);
-				this.setRoute("geoserver-" + randomId);
+				this.setAppName(BoundlessAppResourceConstants.GEOSERVER_TYPE + "-" + randomId);
+				this.setRoute(BoundlessAppResourceConstants.GEOSERVER_TYPE + "-" + randomId);
 				break;		
 			case BoundlessAppResourceConstants.GWC_TYPE:
 				this.setDockerImage(config.getGeoCacheDockerUri());
@@ -210,8 +210,8 @@ public class BoundlessAppResource {
 				this.setMemory(config.getGeoCacheMemory());
 				this.setDisk(config.getGeoCacheDisk());
 				this.setDockerImage(config.getGeoCacheDockerUri());
-				this.setAppName("gwc-" + randomId);
-				this.setRoute("gwc-" + randomId);
+				this.setAppName(BoundlessAppResourceConstants.GWC_TYPE + "-" + randomId);
+				this.setRoute(BoundlessAppResourceConstants.GWC_TYPE + "-" + randomId);
 			default:
 				break;
 		}

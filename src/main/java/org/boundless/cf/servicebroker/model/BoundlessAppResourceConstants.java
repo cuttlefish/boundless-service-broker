@@ -2,6 +2,9 @@ package org.boundless.cf.servicebroker.model;
 
 public class BoundlessAppResourceConstants {
 	
+	public static final String GWC_TYPE = "geocache";
+	public static final String GEOSERVER_TYPE = "geoserver";
+
 	public static final String GEOSERVER_HOST = "GEOSERVER_HOST";
 	
 	public static final String GEOSERVER_ADMIN_ID = "GEOSERVER_ADMIN_USERNAME";
@@ -10,11 +13,10 @@ public class BoundlessAppResourceConstants {
 	public static final String GWC_ADMIN_ID = "GWC_ADMIN_USERNAME";
 	public static final String GWC_ADMIN_PASSWD = "GWC_ADMIN_PASSWORD";
 
-	public static final String GWC_TYPE = "geocache";
-	public static final String GEOSERVER_TYPE = "geoserver";
-
 	public static final String CONSUL_HOST = "CONSUL_HOST";
 	public static final String CONSUL_PORT = "CONSUL_PORT";
+
+	public static final String SERVICE_INSTANCE_NAME = "SERVICE_INSTANCE";
 	
 	private static final String[] BOUNDLESS_APP_RESOURCE_TYPES = { GEOSERVER_TYPE, GWC_TYPE };
 

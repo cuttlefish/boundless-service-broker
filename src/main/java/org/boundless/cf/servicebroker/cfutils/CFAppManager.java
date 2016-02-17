@@ -47,6 +47,7 @@ import org.cloudfoundry.client.v2.servicebindings.DeleteServiceBindingRequest;
 import org.cloudfoundry.client.v2.servicebindings.GetServiceBindingRequest;
 import org.cloudfoundry.client.v2.serviceinstances.CreateServiceInstanceRequest;
 import org.cloudfoundry.client.v2.serviceinstances.DeleteServiceInstanceRequest;
+import org.cloudfoundry.client.v2.serviceinstances.GetServiceInstanceRequest;
 import org.cloudfoundry.client.v2.serviceinstances.ServiceInstanceEntity;
 import org.cloudfoundry.client.v2.serviceplans.ListServicePlansRequest;
 import org.cloudfoundry.client.v2.services.GetServiceRequest;
@@ -548,6 +549,16 @@ public class CFAppManager {
 						.build())
 					.log("stream.requestDeleteServiceInstance")
 					.after();
+	}
+	
+	public static Mono<String> requestServiceInstanceName(CloudFoundryClient cloudFoundryClient, String serviceInstanceId ) {
+		return			   					
+					 cloudFoundryClient.serviceInstances()
+					 		.get( GetServiceInstanceRequest.builder()
+								.serviceInstanceId(serviceInstanceId)
+								.build())
+							.map(resource -> resource.getEntity().getName())
+							.log("stream.requestServiceInstance");
 	}
 	
 	public static Mono<String> requestCreateServiceInstance(CloudFoundryClient cloudFoundryClient, String serviceName, String spaceId, Mono<String> servicePlanId) {
