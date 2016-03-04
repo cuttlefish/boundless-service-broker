@@ -17,9 +17,8 @@
 package org.boundless.cf.servicebroker.cfutils;
 
 import org.apache.log4j.Logger;
-import org.cloudfoundry.client.CloudFoundryClient;
-import org.cloudfoundry.client.spring.SpringCloudFoundryClient;
 import org.cloudfoundry.client.v2.domains.ListDomainsRequest;
+import org.cloudfoundry.spring.client.SpringCloudFoundryClient;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.context.annotation.Bean;

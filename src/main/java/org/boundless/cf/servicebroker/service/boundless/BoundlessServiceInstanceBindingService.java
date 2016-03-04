@@ -38,7 +38,7 @@ public class BoundlessServiceInstanceBindingService implements
 			throws ServiceInstanceBindingExistsException,
 			ServiceBrokerException {
 
-		log.info("Incoming CreateServiceInstanceBindingRequest: " + request);
+		log.debug("Incoming CreateServiceInstanceBindingRequest: " + request);
 		
 		String bindingId = request.getBindingId();
 		if (bindingId == null) {
@@ -104,7 +104,7 @@ public class BoundlessServiceInstanceBindingService implements
 				serviceInstanceId, bsi.getServiceId(), bsi.getPlanId(), credMap, null,
 				request.getAppGuid());
 
-		log.info("Saving ServiceInstanceBinding: " + binding);
+		log.debug("Saving ServiceInstanceBinding: " + binding);
 		return repository.save(binding);
 	}
 
@@ -113,7 +113,7 @@ public class BoundlessServiceInstanceBindingService implements
 			DeleteServiceInstanceBindingRequest request)
 			throws ServiceBrokerException {
 
-		log.info("Incoming DeleteServiceInstanceBindingRequest: " + request);
+		log.debug("Incoming DeleteServiceInstanceBindingRequest: " + request);
 		
 		ServiceInstanceBinding binding = repository.findOne(request
 				.getBindingId());

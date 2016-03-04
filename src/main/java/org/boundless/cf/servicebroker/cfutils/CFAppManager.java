@@ -1,5 +1,7 @@
 package org.boundless.cf.servicebroker.cfutils;
 
+import java.time.Duration;
+
 /*
  * Copyright 2013-2016 the original author or authors.
  *
@@ -56,9 +58,11 @@ import org.cloudfoundry.client.v2.services.ListServicesRequest;
 import org.cloudfoundry.client.v2.spaces.ListSpacesRequest;
 import org.reactivestreams.Publisher;
 
+import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
-import reactor.fn.tuple.Tuple2;
-import reactor.rx.Stream;
+import reactor.core.tuple.Tuple2;
+
+
 
 public class CFAppManager {
 
@@ -98,8 +102,8 @@ public class CFAppManager {
                 .build();
 
         return cloudFoundryClient.organizations().list(request)
-                .flatMap(response -> Stream.fromIterable(response.getResources()))
-                .as(Stream::from)
+                .flatMap(response -> Flux.fromIterable(response.getResources()))
+                .as(Flux::from)
                 .single()
                 .map(resource -> resource.getMetadata().getId());
      
@@ -123,8 +127,8 @@ public class CFAppManager {
 		        .build();
 		
 		return cloudFoundryClient.spaces().list(request)
-		        .flatMap(response -> Stream.fromIterable(response.getResources()))
-		        .as(Stream::from)
+		        .flatMap(response -> Flux.fromIterable(response.getResources()))
+		        .as(Flux::from)
 		        .single()
 		        .map(resource -> resource.getMetadata().getId());
     }
@@ -138,8 +142,8 @@ public class CFAppManager {
                             .build();
 
                     return cloudFoundryClient.spaces().list(request)
-                            .flatMap(response -> Stream.fromIterable(response.getResources()))
-                            .as(Stream::from)
+                            .flatMap(response -> Flux.fromIterable(response.getResources()))
+                            .as(Flux::from)
                             .single()
                             .map(resource -> resource.getMetadata().getId());
                 });
@@ -180,7 +184,7 @@ public class CFAppManager {
                     String routeId2 = tuple.t2;
                     String applicationId2 = tuple.t1;
                     return 
-	                    Mono.delay(15, TimeUnit.SECONDS)
+	                    Mono.delay(Duration.ofSeconds(15))
 	                    .then( l -> requestAssociateRoute(cloudFoundryClient, applicationId2, routeId2))
 	                    .map(r -> tuple);
                 })
@@ -269,7 +273,7 @@ public class CFAppManager {
                 .applicationId(applicationId)
                 .build();
 
-        return Mono.delay(15, TimeUnit.SECONDS)
+        return Mono.delay(Duration.ofSeconds(15))
                 .then( l -> cloudFoundryClient.applicationsV2()
                 			.delete(request)
                 			.log("stream.postDeleteApp"))
@@ -277,7 +281,7 @@ public class CFAppManager {
     }
 
     public static Mono<Void> deleteApplications(CloudFoundryClient cloudFoundryClient, String spaceId, String application) {
-        return Stream
+        return Flux
                 .from(listApplicationIds(cloudFoundryClient, spaceId, application))
                 .log("stream.postListAppIds")
                 .flatMap(applicationId -> deleteApplication(cloudFoundryClient, applicationId))
@@ -292,7 +296,7 @@ public class CFAppManager {
                 .build();
 
         return cloudFoundryClient.applicationsV2().list(request)
-                .flatMap(response -> Stream.fromIterable(response.getResources()))
+                .flatMap(response -> Flux.fromIterable(response.getResources()))
                 .map(resource -> resource.getMetadata().getId());
     }
 
@@ -441,9 +445,9 @@ public class CFAppManager {
                 .build();
         
         return cloudFoundryClient.domains().list(request)
-                .flatMap(response -> Stream.fromIterable(response.getResources()))
+                .flatMap(response -> Flux.fromIterable(response.getResources()))
                 .log("stream.requestDomain")
-                .as(Stream::from)
+                .as(Flux::from)
                 .singleOrEmpty();
         
     }
@@ -456,8 +460,8 @@ public class CFAppManager {
                 .build();
 
         return cloudFoundryClient.routes().list(request)
-                .flatMap(response -> Stream.fromIterable(response.getResources()))
-                .as(Stream::from)
+                .flatMap(response -> Flux.fromIterable(response.getResources()))
+                .as(Flux::from)
                 .single()
                 .map(resource -> resource.getMetadata().getId());
     }
@@ -467,8 +471,8 @@ public class CFAppManager {
                 .build();
 
         return cloudFoundryClient.domains().list(request)
-        		.as(Stream::from)
-    			.flatMap(resource -> Stream.fromIterable(resource.getResources()))
+        		.as(Flux::from)
+    			.flatMap(resource -> Flux.fromIterable(resource.getResources()))
                 .log("stream.requestFirstDomain")
                 .next();
     }
@@ -476,7 +480,7 @@ public class CFAppManager {
 
     private static Mono<String> requestRouteId(CloudFoundryClient cloudFoundryClient, String domainId, String spaceId, String host) {
         return requestCreateRouteId(cloudFoundryClient, domainId, spaceId, host)
-                .as(Stream::from)
+                .as(Flux::from)
                 .switchOnError(requestExistingRouteId(cloudFoundryClient, domainId, host))
                 .single();
     }
@@ -582,9 +586,9 @@ public class CFAppManager {
 							.list( ListServicePlansRequest.builder()
 								.serviceId(serviceIdString)
 								.build())
-							.as(Stream::from)
+							.as(Flux::from)
 							.log("stream.requestServicePlanId")
-							.flatMap(resource -> Stream.fromIterable(resource.getResources()))
+							.flatMap(resource -> Flux.fromIterable(resource.getResources()))
 							.next()
 							.map(resource -> resource.getMetadata().getId())
 				);			
@@ -606,9 +610,9 @@ public class CFAppManager {
 						.label(serviceLabel)	
 						.build())
 					.log("stream.requestServiceIdList")	
-					.as(Stream::from)
+					.as(Flux::from)
 					.log("stream.requestServiceIdStream")	
-					.flatMap(resource -> Stream.fromIterable(resource.getResources()))
+					.flatMap(resource -> Flux.fromIterable(resource.getResources()))
 					.next()
 					.map(resource -> resource.getMetadata().getId());			
 	}

@@ -30,7 +30,6 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import reactor.core.publisher.Mono;
-import reactor.fn.tuple.Tuple2;
 
 @Service
 public class BoundlessServiceInstanceService implements ServiceInstanceService {
@@ -38,15 +37,17 @@ public class BoundlessServiceInstanceService implements ServiceInstanceService {
 	private static final Logger log = Logger
 			.getLogger(BoundlessServiceInstanceService.class);
 	
-	public static final String GWC_SERVICE_PROVIDER = "p-riakcs";
-	public static final String GWC_SERVICE_PREFIX = "riakcs-";
-
-
 	@Value("${consul.host}")
     private String consulHost;
 	
 	@Value("${consul.port}")
     private int consulPort;
+	
+	@Value("${contact.organization:PIVOTAL}")
+    private String envContactOrg;
+
+	@Value("${gwc.service.provider}")
+    private String gwcServiceProvider;
 	
 	@Autowired
 	CatalogService catalogService;
@@ -65,6 +66,7 @@ public class BoundlessServiceInstanceService implements ServiceInstanceService {
 	
 	@Autowired
 	CloudFoundryClient cfClient;
+	
 
 	public String getConsulHost() {
 		return consulHost;
@@ -148,7 +150,7 @@ public class BoundlessServiceInstanceService implements ServiceInstanceService {
 		createApp(serviceInstance);
     	serviceInstance = saveInstance(serviceInstance);
 
-		log.info("Registered service instance: "
+		log.debug("Registered service instance: "
 				+ serviceInstance);
 
 		return serviceInstance;
@@ -172,11 +174,11 @@ public class BoundlessServiceInstanceService implements ServiceInstanceService {
 		serviceInstance.setCurrentOperation(ServiceInstance.DELETE_REQUEST);
 		serviceInstance.setLastOperation(new ServiceInstanceLastOperation("Deprovisioning", OperationState.IN_PROGRESS));
 		serviceInstance = saveInstance(serviceInstance);
-		log.info("deleting service instance: " + request.getServiceInstanceId() + ", full ServiceInstance details: " + serviceInstance);
+		log.debug("deleting service instance: " + request.getServiceInstanceId() + ", full ServiceInstance details: " + serviceInstance);
 
 		serviceInstance = deleteInstance(serviceInstance);
 
-		log.info("Unregistered service instance: "
+		log.debug("Unregistered service instance: "
 				+ serviceInstance);
 
 		return serviceInstance;
@@ -192,10 +194,10 @@ public class BoundlessServiceInstanceService implements ServiceInstanceService {
 		if (existingInstance == null || existingInstance.getId() == null) {
 			return null;
 		}
-		log.info("Update on Service Instance: " + request);
+		log.debug("Update on Service Instance: " + request);
 		//BoundlessServiceInstance updateToInstance = new BoundlessServiceInstance(request);
 		existingInstance.update(request);
-		log.info("Updated service instance to: "
+		log.debug("Updated service instance to: "
 				+ existingInstance);
 		
 		// First persist the state so if any calls into check the state it can show as being deleted...
@@ -212,7 +214,7 @@ public class BoundlessServiceInstanceService implements ServiceInstanceService {
 		}
 
 		existingInstance = saveInstance(existingInstance);
-		log.info("Updated service instance: "
+		log.debug("Updated service instance: "
 				+ existingInstance);
 		return existingInstance;
 	}
@@ -235,7 +237,7 @@ public class BoundlessServiceInstanceService implements ServiceInstanceService {
 										OperationState.IN_PROGRESS));
 		serviceInstanceRepository.save(instance);
 		
-		log.info("Starting deletion of service instance: " + instance);
+		log.debug("Starting deletion of service instance: " + instance);
 		
 		this.deleteApp(instance);    	
 		instance.getLastOperation().setState(OperationState.SUCCEEDED);
@@ -251,7 +253,7 @@ public class BoundlessServiceInstanceService implements ServiceInstanceService {
 			serviceInstanceRepository.delete(instance.getId());
 		}
 		
-		log.info("Deleted service instance: " + instance);
+		log.debug("Deleted service instance: " + instance);
 		return instance;
 	}
 
@@ -289,32 +291,24 @@ public class BoundlessServiceInstanceService implements ServiceInstanceService {
 		geoWebCacheAppResource.addToEnvironment(BoundlessAppResourceConstants.GEOSERVER_ADMIN_PASSWD, geoServerAppResource.getPassword());	
 		
 		// Update the GWC instance env variable 'GEOSERVER_HOST' with pointer to GeoServer route
-		String geoServerUrl = "https://" + geoServerAppResource.getRoute() + "." + boundlessSIMetadata.getDomain(); 
+		String geoServerUrl = geoServerAppResource.getRoute() + "." + boundlessSIMetadata.getDomain(); 
 		geoWebCacheAppResource.addToEnvironment(BoundlessAppResourceConstants.GEOSERVER_HOST, geoServerUrl);
+		geoWebCacheAppResource.addToEnvironment(BoundlessAppResourceConstants.GEOSERVER_PORT, 80);	
+		
+		geoServerAppResource.addToEnvironment(BoundlessAppResourceConstants.CONTACT_ORGANIZATION_KEY, 
+				envContactOrg);
+		geoWebCacheAppResource.addToEnvironment(BoundlessAppResourceConstants.CONTACT_ORGANIZATION_KEY, 
+				envContactOrg);		
 	}
-	
+		
 	/*
-	 * Override app and routes based on service instance name
-	 * Following wont work as the service instance is yet to be created and so wont be able to lookup service name
-	 *
-	private void overrideAppAndRoutes(BoundlessServiceInstance serviceInstance) {
-		BoundlessServiceInstanceMetadata boundlessSIMetadata = serviceInstance.getMetadata();
-		BoundlessAppResource geoWebCacheAppResource = boundlessSIMetadata.getResource(BoundlessAppResourceConstants.GWC_TYPE);
-		BoundlessAppResource geoServerAppResource = boundlessSIMetadata.getResource(BoundlessAppResourceConstants.GEOSERVER_TYPE);
-
-		String serviceInstanceName = boundlessSIMetadata.getServiceInstanceName();
-		geoServerAppResource.setAppName(BoundlessAppResourceConstants.GEOSERVER_TYPE + "-" + serviceInstanceName);
-		geoServerAppResource.setRoute(BoundlessAppResourceConstants.GEOSERVER_TYPE + "-" + serviceInstanceName);
-		geoWebCacheAppResource.setAppName(BoundlessAppResourceConstants.GWC_TYPE + "-" + serviceInstanceName);
-		geoWebCacheAppResource.setRoute(BoundlessAppResourceConstants.GWC_TYPE + "-" + serviceInstanceName);
-	}
-	*/
-	
-	/*
-	 * Create and Bind to S3 Object store type service for GWC instances
-	 * In our case, it would be Riak-cs
+	 * Create and Bind to PostGis or S3 Object store type service for GWC instances
+	 * 
 	 */
 	private String createAndBindToGWCService(String serviceProvider, String serviceName, String spaceGuid, String appId) {
+		
+		if (serviceProvider == null)
+			return null;
 		
 		Mono<String> serviceId = null;
 		Mono<String> servicePlanId = null;
@@ -322,7 +316,12 @@ public class BoundlessServiceInstanceService implements ServiceInstanceService {
 		Mono<String> serviceBindInstanceId = null;
 		try {
 			serviceId = CFAppManager.requestServiceId(cfClient, serviceProvider);
+			if (serviceId == null)
+				return null;
+			
 			servicePlanId = CFAppManager.requestServicePlanId(cfClient, serviceId);
+			if (servicePlanId == null)
+				return null;			
 
 			serviceInstanceId = CFAppManager.requestCreateServiceInstance( cfClient, serviceName, spaceGuid, servicePlanId);
 			serviceBindInstanceId = CFAppManager.requestCreateServiceBinding( cfClient, appId, serviceInstanceId);
@@ -408,17 +407,19 @@ public class BoundlessServiceInstanceService implements ServiceInstanceService {
 		    	// Need a get() on function call to really execute the logic in Reactive
 		    	BoundlessAppResource resource = boundlessSIMetadata.getResource(resourceType);
 		    	
-	    		Tuple2<String, String> resultPair = CFAppManager.push(cfClient, appMetadata).get(); 
+	    		reactor.core.tuple.Tuple2<String, String> resultPair = CFAppManager.push(cfClient, appMetadata).get(); 
 		    	if (resultPair != null) {
 		    		String appId = resultPair.t1;
 		    		String routeId = resultPair.t2;
 		    		resource.setAppGuid(appId);
 		    		resource.setRouteGuid(routeId);
 		    		
+		    		// Bind to PostGis or Riak-CS
 		    		if (BoundlessAppResourceConstants.isOfType(resourceType, BoundlessAppResourceConstants.GWC_TYPE)) {
-		    			String serviceBindingId = createAndBindToGWCService(GWC_SERVICE_PROVIDER, GWC_SERVICE_PREFIX + appMetadata.getName(), spaceGuid, appId);
-		    			resource.addToServiceBindings(serviceBindingId);
-		    		}
+		    			String serviceBindingId = createAndBindToGWCService(gwcServiceProvider, gwcServiceProvider + "-" + appMetadata.getName(), spaceGuid, appId);
+		    			if (serviceBindingId != null)
+		    				resource.addToServiceBindings(serviceBindingId);
+			    	}
 		    	}
 	    	}
     	} catch(Exception e) {

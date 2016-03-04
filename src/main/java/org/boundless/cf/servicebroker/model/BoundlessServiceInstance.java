@@ -67,12 +67,12 @@ public class BoundlessServiceInstance extends ServiceInstance {
 		boundlessSIMetadata.setOrgGuid(this.getOrgGuid());
 		boundlessSIMetadata.setSpaceGuid(this.getSpaceGuid());
 		
-		log.info("Service Instance metadata overridden on Creation: " + this);
+		log.debug("Service Instance metadata overridden on Creation: " + this);
 	}
 	
 	public void update(UpdateServiceInstanceRequest request) {		
 		this.boundlessSIMetadata.updateResourceDefns(request.getParameters());
-		log.info("Service Instance updated to: " + this);
+		log.debug("Service Instance updated to: " + this);
 	}
 	
 	@Override
