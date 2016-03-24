@@ -14,7 +14,7 @@ releases:                                                  # [5]
 # EDIT the stemcell version as required
 stemcell_criteria:                                                  # [3]
   os: ubuntu-trusty
-  version: '3146.8'
+  version: '3146.10'
   requires_cpi: false
 
 property_blueprints:
@@ -88,11 +88,11 @@ job_types:
    - name: ram
      type: integer
      configurable: true
-     default: 1_024
+     default: 2048
    - name: ephemeral_disk
      type: integer
      configurable: true
-     default: 4096
+     default: 8192
    - name: persistent_disk
      type: integer
      configurable: true
