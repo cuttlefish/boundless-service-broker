@@ -24,7 +24,6 @@ import java.time.Duration;
  */
 
 import java.util.Map;
-import java.util.concurrent.TimeUnit;
 
 import org.apache.log4j.Logger;
 import org.boundless.cf.servicebroker.model.dto.AppMetadataDTO;
@@ -34,6 +33,7 @@ import org.cloudfoundry.client.v2.applications.CreateApplicationRequest.CreateAp
 import org.cloudfoundry.client.v2.applications.DeleteApplicationRequest;
 import org.cloudfoundry.client.v2.applications.ListApplicationsRequest;
 import org.cloudfoundry.client.v2.applications.SummaryApplicationRequest;
+import org.cloudfoundry.client.v2.applications.SummaryApplicationResponse;
 import org.cloudfoundry.client.v2.applications.UpdateApplicationRequest;
 import org.cloudfoundry.client.v2.applications.UpdateApplicationRequest.UpdateApplicationRequestBuilder;
 import org.cloudfoundry.client.v2.domains.DomainResource;
@@ -185,7 +185,8 @@ public class CFAppManager {
                     String applicationId2 = tuple.t1;
                     return 
 	                    Mono.delay(Duration.ofSeconds(15))
-	                    .then( l -> requestAssociateRoute(cloudFoundryClient, applicationId2, routeId2))
+	                    .then( l ->  checkAppStaging(cloudFoundryClient, applicationId2) )
+	                    .then( s -> requestAssociateRoute(cloudFoundryClient, applicationId2, routeId2))
 	                    .map(r -> tuple);
                 })
                 .otherwise(throwable ->  {
@@ -306,20 +307,25 @@ public class CFAppManager {
                 .routeId(routeId)
                 .build();
       
-        Mono<String> status = null;
         int trials = 0;
+        int RETRY_LIMIT = 4;
+        Mono<String> status = null;
         
-        while (trials++ < 2) {
+        while (trials++ < RETRY_LIMIT) {
         	try {
 	        	status = cloudFoundryClient.routes().associateApplication(request)
 	        		.log("stream.associateRoute")
 	        		.map(response -> response.getMetadata().getId());
         	} catch(Exception e) {
         		log.error("Error on associateRoute:" + e.getMessage());
-        		if (trials < 2)
-        			log.error("Attempting retry once more");
-        		else
+        		if (trials < RETRY_LIMIT) {
+        			log.error("Attempting retry again");
+        			try {
+        				Thread.sleep(15000);
+		        	}catch(Exception e1) {} 
+		        } else {
         			throw e;
+		        }
         	}
     	} 
         	
@@ -494,6 +500,33 @@ public class CFAppManager {
        return cloudFoundryClient.applicationsV2().summary(request)
     		   .log("stream.checkAppSummary")
     		   .map(response -> response.getId());
+    }
+    
+    private static Mono<String> checkAppStaging(CloudFoundryClient cloudFoundryClient, String applicationId) {
+   	 
+		SummaryApplicationRequest request = SummaryApplicationRequest.builder()
+		        .applicationId(applicationId)
+		        .build();
+		
+		int trials = 0;
+		int RETRY_LIMIT = 15;
+		String STAGED_STATE = "STAGED";
+		SummaryApplicationResponse endResponse = null;
+		
+		do {
+			try {
+				if (++trials != 1)
+					Thread.sleep(5000);
+			} catch(Exception e) { }
+			endResponse = cloudFoundryClient.applicationsV2().summary(request)
+    		   .log("stream.checkAppStaging")
+    		   .map(response -> response)
+    		   .get();
+		} while (!endResponse.getPackageState().equals(STAGED_STATE) && trials < RETRY_LIMIT);
+		
+		log.info("App: " + applicationId + " in packaging state: " + endResponse.getPackageState() + ", after " + trials + " trials" );
+		
+        return Mono.just(endResponse.getId());
     }
     
     public static Mono<Void> requestDeleteServiceBinding(CloudFoundryClient cloudFoundryClient, String serviceBindingId) {
